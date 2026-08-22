@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Memory Trick</title>
+<style>
+  :root{
+    --bg:#101a2e; --panel:#1b2842; --ink:#f2f6ff; --muted:#93a3c4;
+    --line:#2c3c5e; --hot:#ffb020; --hot-ink:#3a2500;
+    --good:#3ddc97; --bad:#ff6b6b; --radius:18px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); overflow-x:hidden;
+    font:600 18px/1.45 ui-rounded,"SF Pro Rounded",-apple-system,"Segoe UI",system-ui,sans-serif;
+  }
+  .wrap{max-width:620px; margin:0 auto; padding:20px 16px 60px; text-align:center}
+  h1{font-size:34px; line-height:1.1; margin:8px 0 4px; letter-spacing:-.02em}
+  p{margin:0 0 14px}
+  .muted{color:var(--muted); font-weight:600; font-size:16px}
+  button{
+    font:800 20px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
+    background:var(--hot); color:var(--hot-ink); border:0; border-radius:999px;
+    padding:16px 34px; cursor:pointer; box-shadow:0 5px 0 #c9820f; margin-top:10px;
+  }
+  button:active{transform:translateY(3px); box-shadow:0 2px 0 #c9820f}
+  button.calm{background:transparent; color:var(--ink); border:2px solid var(--line); box-shadow:none}
+  button.calm:active{transform:none}
+  .card{background:var(--panel); border-radius:var(--radius); padding:22px 18px; margin:14px 0}
+  /* the big show-one-item stage */
+  .stage{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:290px; background:var(--panel); border-radius:var(--radius); padding:18px;
+  }
+  .big{font-size:104px; line-height:1; margin:0}
+  .word{font-size:28px; font-weight:800; margin-top:8px; letter-spacing:-.01em}
+  .link{
+    color:var(--hot); font-size:17px; font-weight:700; margin-top:14px;
+    max-width:420px; min-height:48px;
+  }
+  .pips{display:flex; gap:6px; justify-content:center; margin-top:16px}
+  .pip{width:9px; height:9px; border-radius:99px; background:var(--line)}
+  .pip.on{background:var(--hot)}
+  /* recall grid */
+  .grid{display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-top:8px}
+  @media(max-width:400px){ .grid{gap:7px} }
+  .tile{
+    aspect-ratio:1; font-size:34px; background:var(--panel); border:2px solid var(--line);
+    border-radius:14px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    position:relative; padding:0; box-shadow:none; color:inherit;
+  }
+  .tile:active{transform:scale(.94); box-shadow:none}
+  .tile.picked{border-color:var(--hot); background:#2a3555}
+  .tile.right{border-color:var(--good); background:rgba(61,220,151,.16)}
+  .tile.wrong{border-color:var(--bad); background:rgba(255,107,107,.14); opacity:.75}
+  .tile.missed{border-style:dashed; border-color:var(--good); opacity:.55}
+  .tick{position:absolute; top:-8px; right:-8px; font-size:19px}
+  .score{font-size:60px; font-weight:800; line-height:1; margin:6px 0 2px}
+  .bars{display:flex; flex-direction:column; gap:12px; margin:18px 0 6px; text-align:left}
+  .bar b{display:block; font-size:14px; color:var(--muted); margin-bottom:5px}
+  .track{background:var(--line); border-radius:99px; height:30px; overflow:hidden}
+  .fill{
+    height:100%; background:var(--hot); color:var(--hot-ink); border-radius:99px;
+    display:flex; align-items:center; justify-content:flex-end; padding-right:11px;
+    font-size:15px; font-weight:800; width:0; transition:width .9s cubic-bezier(.2,.8,.2,1);
+  }
+  .fill.best{background:var(--good)}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <noscript><div class="card">This game needs JavaScript. Save the file and open it directly in a
+  browser — preview panes in chat apps block scripts.</div></noscript>
+  <div id="app"></div>
+</div>
+<script>
+/* ---------------------------------------------------------------
+   THE MEMORY TRICK — teaches the link/story method.
+   Not a brain-training game: working-memory drills don't transfer.
+   This teaches ONE portable technique and proves it works on the
+   child's own score, in about five minutes. No typing anywhere.
+--------------------------------------------------------------- */
+
+const NAMES = {"🐘":"elephant","🎸":"guitar","🍌":"banana","🚀":"rocket","🐸":"frog","🎩":"hat","🍕":"pizza","🦖":"dinosaur","🚲":"bike","🌵":"cactus","🐙":"octopus","🎈":"balloon","🧦":"sock","🍩":"doughnut","🦉":"owl","🥁":"drum","🚂":"train","🍉":"melon","🐧":"penguin","🧸":"teddy","🔦":"torch","🥕":"carrot","🦋":"butterfly","⚽":"football","🍄":"mushroom","🐝":"bee","🎃":"pumpkin","🪃":"boomerang","🧀":"cheese","🚁":"helicopter","🦒":"giraffe","🕯️":"candle"};
+const POOL = Object.keys(NAMES);
+const app = document.getElementById("app");
+const shuffle = a => a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(p=>p[1]);
+const name = e => NAMES[e] || "thing";
+let used = [], scores = {};
+
+function pick(n){
+  const avail = POOL.filter(e => !used.includes(e) && NAMES[e]);
+  const got = shuffle(avail).slice(0,n);
+  used = used.concat(got);
+  return got;
+}
+const linkText = (a,b) =>
+  `Picture the <b>${name(a)}</b> and the <b>${name(b)}</b> together — make it silly!`;
+
+/* ---------- 1. splash ---------- */
+function splash(){
+  app.innerHTML = `
+    <h1>The Memory Trick</h1>
+    <p class="muted">How many things can you remember?</p>
+    <div class="stage">
+      <p class="big">🧠</p>
+      <p class="word">Let's find out</p>
+      <p class="muted" style="margin-top:10px">Things will flash up. Remember as many as you can.</p>
+    </div>
+    <button onclick="round1()">Play</button>`;
+}
+
+/* ---------- generic show-items phase ---------- */
+function show(items, opts, done){
+  let i = 0;
+  const per = opts.per || 2400;
+  function frame(){
+    if(i >= items.length){ done(); return; }
+    const e = items[i];
+    const hint = opts.linked && i>0 ? linkText(items[i-1], e)
+               : opts.selfLink && i>0 ? `Connect it to the <b>${name(items[i-1])}</b>. Your own picture!`
+               : opts.selfLink || opts.linked ? `Start your story with the <b>${name(e)}</b>.` : "";
+    app.innerHTML = `
+      <p class="muted">${opts.label}</p>
+      <div class="stage">
+        <p class="big">${e}</p>
+        <p class="word">${name(e)}</p>
+        <p class="link">${hint}</p>
+        <div class="pips">${items.map((_,k)=>`<div class="pip ${k<=i?'on':''}"></div>`).join("")}</div>
+      </div>`;
+    i++;
+    setTimeout(frame, per);
+  }
+  frame();
+}
+
+/* ---------- generic recall phase ---------- */
+function recall(items, label, done){
+  const decoys = shuffle(POOL.filter(e => !items.includes(e) && NAMES[e])).slice(0, items.length*2);
+  const tiles = shuffle(items.concat(decoys));
+  const picked = [];
+  app.innerHTML = `
+    <p class="muted">${label}</p>
+    <h1 style="font-size:25px">Tap the ${items.length} you saw</h1>
+    <p class="muted" id="cnt">0 of ${items.length} chosen</p>
+    <div class="grid" id="g">${tiles.map(e=>`<button class="tile" data-e="${e}">${e}</button>`).join("")}</div>
+    <button id="go" class="calm" disabled style="opacity:.4">Check my answers</button>`;
+  const g = document.getElementById("g"), go = document.getElementById("go");
+  g.querySelectorAll(".tile").forEach(t=>{
+    t.onclick = () => {
+      const e = t.dataset.e, at = picked.indexOf(e);
+      if(at > -1){ picked.splice(at,1); t.classList.remove("picked"); t.querySelector(".tick")?.remove(); }
+      else if(picked.length < items.length){
+        picked.push(e); t.classList.add("picked");
+        t.insertAdjacentHTML("beforeend", '<span class="tick">⭐</span>');
+      }
+      document.getElementById("cnt").textContent = `${picked.length} of ${items.length} chosen`;
+      go.disabled = picked.length !== items.length;
+      go.style.opacity = go.disabled ? .4 : 1;
+    };
+  });
+  go.onclick = () => {
+    let right = 0;
+    g.querySelectorAll(".tile").forEach(t=>{
+      const e = t.dataset.e, isTarget = items.includes(e), isPicked = picked.includes(e);
+      t.onclick = null;
+      t.querySelector(".tick")?.remove();
+      t.classList.remove("picked");
+      if(isPicked && isTarget){ t.classList.add("right"); right++;
+        t.insertAdjacentHTML("beforeend",'<span class="tick">✅</span>'); }
+      else if(isPicked){ t.classList.add("wrong");
+        t.insertAdjacentHTML("beforeend",'<span class="tick">❌</span>'); }
+      else if(isTarget){ t.classList.add("missed"); }
+    });
+    go.outerHTML = `<button onclick="window.__next()">Next</button>`;
+    window.__next = () => done(right, items.length);
+  };
+}
+
+/* ---------- 2. cold round ---------- */
+function round1(){
+  const items = pick(8);
+  show(items, {label:"Round 1 — just remember them"}, () =>
+    recall(items, "Round 1", (right,total) => {
+      scores.r1 = {right,total};
+      app.innerHTML = `
+        <p class="muted">Round 1</p>
+        <div class="card">
+          <p class="score">${right}<span style="font-size:24px;color:var(--muted)">/${total}</span></p>
+          <p class="muted">Most people get about 3 or 4 this way.</p>
+          <h1 style="font-size:26px;margin-top:18px">Want to know the trick?</h1>
+          <p class="muted">Magicians use it. It works on anything.</p>
+        </div>
+        <button onclick="teach()">Show me the trick</button>`;
+    }));
+}
+
+/* ---------- 3. teach the technique ---------- */
+function teach(){
+  app.innerHTML = `
+    <p class="muted">The trick</p>
+    <div class="card" style="text-align:left">
+      <p style="font-size:21px"><b>Don't remember a list. Make a silly film.</b></p>
+      <p class="muted" style="font-size:17px">Join each thing to the next one in a picture so
+      ridiculous you couldn't forget it if you tried.</p>
+      <div style="text-align:center;margin:20px 0 8px">
+        <p style="font-size:56px;margin:0">🐘 ➕ 🎸</p>
+        <p class="link" style="margin:8px auto">The <b>elephant</b> is playing the <b>guitar</b>
+        with its trunk. Badly. It's very loud.</p>
+        <p style="font-size:56px;margin:14px 0 0">🎸 ➕ 🍌</p>
+        <p class="link" style="margin:8px auto">The guitar strings are <b>bananas</b>. They snap
+        when he strums.</p>
+      </div>
+      <p class="muted" style="font-size:16px"><b>Silly is the point.</b> Boring pictures don't
+      stick. Weird ones do.</p>
+    </div>
+    <button onclick="round2()">Let me try it</button>`;
+}
+
+/* ---------- 4. guided round ---------- */
+function round2(){
+  const items = pick(8);
+  show(items, {label:"Round 2 — link each one to the last", linked:true, per:3400}, () =>
+    recall(items, "Round 2", (right,total) => {
+      scores.r2 = {right,total};
+      const up = right - scores.r1.right;
+      app.innerHTML = `
+        <p class="muted">Round 2</p>
+        <div class="card">
+          <p class="score">${right}<span style="font-size:24px;color:var(--muted)">/${total}</span></p>
+          <p style="font-size:22px;margin-top:6px">${
+            up > 0 ? `That's <b style="color:var(--good)">${up} more</b> than before! 🎉`
+                   : up === 0 ? `Same as last time — try making them sillier.`
+                   : `Hmm, tricky round. The pictures need to be weirder.`}</p>
+        </div>
+        <div class="card">
+          <h1 style="font-size:24px">Now the real test</h1>
+          <p class="muted">This time <b>you</b> make the pictures. No help. And it's ten things.</p>
+        </div>
+        <button onclick="round3()">I'm ready</button>`;
+    }));
+}
+
+/* ---------- 5. solo round ---------- */
+function round3(){
+  const items = pick(10);
+  show(items, {label:"Round 3 — your own silly film", selfLink:true, per:3400}, () =>
+    recall(items, "Round 3", (right,total) => {
+      scores.r3 = {right,total};
+      finish();
+    }));
+}
+
+/* ---------- 6. the payoff ---------- */
+function finish(){
+  const pct = s => Math.round(100 * s.right / s.total);
+  const beat = scores.r3.right > scores.r1.right;
+  app.innerHTML = `
+    <h1>${beat ? "Look what you just did" : "Nice work"}</h1>
+    <div class="card">
+      <div class="bars">
+        <div class="bar"><b>Round 1 — no trick</b><div class="track">
+          <div class="fill" id="f1">${scores.r1.right}/${scores.r1.total}</div></div></div>
+        <div class="bar"><b>Round 2 — trick with help</b><div class="track">
+          <div class="fill" id="f2">${scores.r2.right}/${scores.r2.total}</div></div></div>
+        <div class="bar"><b>Round 3 — trick on your own</b><div class="track">
+          <div class="fill best" id="f3">${scores.r3.right}/${scores.r3.total}</div></div></div>
+      </div>
+    </div>
+    <div class="card" style="text-align:left">
+      <p style="font-size:21px"><b>The trick is yours now. 🧠</b></p>
+      <p class="muted" style="font-size:17px">It works on shopping lists, spellings, times tables,
+      people's names — anything you need in an order.</p>
+      <p class="muted" style="font-size:17px"><b>Two rules:</b> join each thing to the next one,
+      and make the picture <b>silly</b>.</p>
+      <p class="muted" style="font-size:16px;margin-top:14px">Try it tomorrow on something real.
+      That's when you'll find out it actually stuck.</p>
+    </div>
+    <button onclick="location.reload()">Play again</button>`;
+  setTimeout(()=>{
+    document.getElementById("f1").style.width = Math.max(pct(scores.r1),16)+"%";
+    document.getElementById("f2").style.width = Math.max(pct(scores.r2),16)+"%";
+    document.getElementById("f3").style.width = Math.max(pct(scores.r3),16)+"%";
+  }, 260);
+}
+splash();
+</script>
+</body>
+</html>
