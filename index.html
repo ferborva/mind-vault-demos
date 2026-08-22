@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Six Moves — a reframing game</title>
+<style>
+  :root{
+    --bg:#f7f5f1; --panel:#fffdfa; --ink:#1d1b18; --muted:#6b655c;
+    --line:#e2ddd4; --accent:#b4532a; --accent-soft:#f4e6df;
+    --good:#2f6b4a; --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
+    --radius:14px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#161513; --panel:#201e1b; --ink:#f0ece5; --muted:#a09a90;
+      --line:#332f2a; --accent:#e8845c; --accent-soft:#3a2620;
+      --good:#7fc4a0; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:17px/1.6 ui-serif,Georgia,"Iowan Old Style",serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:680px; margin:0 auto; padding:32px 20px 80px}
+  h1{font-size:29px; line-height:1.15; margin:0 0 6px; letter-spacing:-.02em}
+  .sub{color:var(--muted); margin:0 0 28px; font-size:16px}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:24px; box-shadow:var(--shadow); margin-bottom:18px;
+  }
+  .eyebrow{
+    font:600 12px/1 ui-sans-serif,system-ui,sans-serif; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--accent); margin-bottom:12px;
+  }
+  .situation{font-size:19px; line-height:1.5; margin:0 0 4px}
+  .label{font:600 13px/1.4 ui-sans-serif,system-ui,sans-serif; color:var(--muted); margin:22px 0 6px}
+  button{
+    font:600 15px/1 ui-sans-serif,system-ui,sans-serif; cursor:pointer;
+    background:var(--accent); color:#fff; border:0; border-radius:9px;
+    padding:12px 18px; transition:opacity .15s;
+  }
+  button:hover{opacity:.88}
+  button:disabled{opacity:.4; cursor:default}
+  button.ghost{background:transparent; color:var(--accent); border:1px solid var(--line)}
+  textarea{
+    width:100%; min-height:110px; resize:vertical; padding:13px 14px;
+    border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink);
+    font:16px/1.55 ui-serif,Georgia,serif;
+  }
+  textarea:focus{outline:2px solid var(--accent); outline-offset:1px}
+  .reveal{
+    border-left:3px solid var(--accent); background:var(--accent-soft);
+    padding:16px 18px; border-radius:0 10px 10px 0; margin-top:8px;
+  }
+  .reveal p{margin:0}
+  .movetag{
+    display:inline-block; font:600 12px/1 ui-sans-serif,system-ui,sans-serif;
+    letter-spacing:.06em; text-transform:uppercase; color:var(--accent);
+    border:1px solid var(--accent); border-radius:999px; padding:6px 11px; margin-top:14px;
+  }
+  .choices{display:grid; gap:8px; margin-top:6px}
+  .choice{
+    text-align:left; background:var(--panel); color:var(--ink);
+    border:1px solid var(--line); border-radius:10px; padding:12px 14px;
+    font:15px/1.4 ui-sans-serif,system-ui,sans-serif; cursor:pointer;
+  }
+  .choice:hover{border-color:var(--accent)}
+  .choice:disabled{opacity:.45}
+  .choice.right{
+    border-color:var(--good); border-width:2px; opacity:1;
+    background:color-mix(in srgb,var(--good) 12%,transparent);
+  }
+  .choice.wrong{border-color:#c2452f; opacity:.8}
+  .choice b{display:block; font-weight:700; margin-bottom:2px}
+  .choice span{color:var(--muted); font-size:13.5px}
+  .progress{
+    display:flex; gap:5px; margin-bottom:24px; align-items:center;
+    font:600 12px/1 ui-sans-serif,system-ui,sans-serif; color:var(--muted);
+    letter-spacing:.08em; text-transform:uppercase;
+  }
+  .dots{display:flex; gap:5px; margin-left:auto}
+  .dot{width:7px; height:7px; border-radius:99px; background:var(--line)}
+  .dot.on{background:var(--accent)}
+  .movelist{display:grid; gap:10px; margin:16px 0 0}
+  .move{border:1px solid var(--line); border-radius:10px; padding:13px 15px}
+  .move b{font:700 15px/1.3 ui-sans-serif,system-ui,sans-serif; display:block; margin-bottom:3px}
+  .move span{color:var(--muted); font-size:14.5px}
+  .yours{
+    background:var(--bg); border:1px dashed var(--line); border-radius:10px;
+    padding:13px 15px; white-space:pre-wrap; font-size:15.5px; color:var(--muted);
+  }
+  .row{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; align-items:center}
+  .note{font-size:14.5px; color:var(--muted); margin-top:14px}
+  .hidden{display:none}
+  select{
+    font:15px ui-sans-serif,system-ui,sans-serif; padding:10px 12px;
+    border:1px solid var(--line); border-radius:9px; background:var(--panel); color:var(--ink);
+  }
+  hr{border:0; border-top:1px solid var(--line); margin:26px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Six Moves</h1>
+  <p class="sub">A short game about seeing a problem a second way. Ten minutes.</p>
+  <noscript>
+    <div class="card">
+      <div class="eyebrow">This page needs JavaScript</div>
+      <p class="situation">You're seeing the title and nothing else because the viewer you opened
+      this in isn't running scripts — the whole game is drawn by one.</p>
+      <p class="note"><strong>Fix:</strong> save the file and open it directly in a browser
+      (double-click it, or drag it onto a browser window). It works offline and sends nothing
+      anywhere. Preview panes inside chat apps and email clients usually block scripts.</p>
+    </div>
+  </noscript>
+  <div id="app"></div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------
+   SIX MOVES — a short game about reframing.
+   Runs entirely in the browser. No network, no storage, no
+   telemetry. Nothing you write leaves this page.
+--------------------------------------------------------------- */
+
+const MOVES = {
+  out:  {name:"Zoom Out",          hint:"The frame is too small. Something that matters was left outside it."},
+  in:   {name:"Zoom In",           hint:"The frame is too big. A smaller, realer problem is hiding inside a vague one."},
+  seat: {name:"Switch Seats",      hint:"Look from someone else's position in the system."},
+  clock:{name:"Change the Clock",  hint:"Run it forward, or back. Timescale changes what a thing means."},
+  flip: {name:"Flip the Constraint",hint:"The thing in your way may be the thing that makes it work."},
+  loop: {name:"Find the Loop",     hint:"It isn't an event, it's a cycle. Something is feeding itself."}
+};
+
+const TRACKS = {
+  younger: {
+    label:"Younger (roughly 9–13)",
+    watch:[
+      {s:"Your football team keeps losing. Everyone says you need better players.",
+       r:"Look at <em>when</em> you lose — it's always the last ten minutes. Nobody is worse than the other team; everyone is more tired than them. The problem was never inside the thing everyone was staring at.",
+       m:"out"},
+      {s:"Your little brother keeps wrecking your Lego builds. You want a lock on your door.",
+       r:"From where he's standing, he isn't attacking your stuff. He's trying to join in and doesn't know the way in. A lock stops the wrecking. It doesn't touch the reason.",
+       m:"seat"}
+    ],
+    guided:[
+      {s:"You got a bad mark on a test and it feels like the whole year is ruined.",
+       m:"clock",
+       r:"Run the clock forward: in June this is one mark out of thirty. Run it backwards: what was last year's bad mark in? You genuinely can't remember. The <em>feeling</em> is real — the <em>size</em> of it is borrowed from today."},
+      {s:"You only get 20 minutes a day to practise piano. That's not enough to get good.",
+       m:"flip",
+       r:"Twenty minutes a day is <em>why</em> you'd get good. With an hour you'd play the bits you already like. With twenty minutes you have to pick the one bar you keep fumbling. The limit chose the right practice for you."}
+    ],
+    solo:[
+      {s:"Your friends always pick the one game you're worst at. You're starting to think you should just leave the group.",
+       m:"in",
+       r:"\"Should I leave my friends\" is an enormous question. Underneath it is a tiny one: <em>one</em> person picks the game, at <em>one</em> moment, once a day. Changing a game choice is a small, cheap thing to try. Changing a friendship is not. Always check whether the huge problem has a small one inside it."},
+      {s:"Homework takes you three hours. Everyone else says it takes them one.",
+       m:"loop",
+       r:"Three hours makes you tired. Tired makes tomorrow's homework slower, which makes you more tired. You never get an evening back to recover, so it never resets. That isn't a homework problem — it's a loop that feeds itself. And loops can be cut anywhere, not only at the place they started."}
+    ]
+  },
+  older: {
+    label:"Older (14+ / adult)",
+    watch:[
+      {s:"Your team's releases keep breaking. Everyone agrees the answer is more testing.",
+       r:"Plot the bugs by day: they cluster on Fridays. This isn't a testing problem, it's a deadline-shape problem — you ship when people are tired. And more tests would have made it <em>harder</em> to see, because they'd quietly absorb the symptom while the cause kept running.",
+       m:"out"},
+      {s:"A city has terrible traffic, so it widens the motorway.",
+       r:"Wider road → faster commute → living further out becomes reasonable → more cars → traffic. It's called induced demand, and the fix fed the problem. Anything that makes a system's pain cheaper tends to buy you more of whatever was causing the pain.",
+       m:"loop"}
+    ],
+    guided:[
+      {s:"Customers keep asking for a feature you're fairly sure is a bad idea.",
+       m:"seat",
+       r:"From their seat they are not requesting a feature. They're describing a workaround they already built for a problem you never saw. The feature is <em>their solution</em>, not their need — which is why it looks wrong from here. Ask what they did the last time it happened, not what they want."},
+      {s:"\"Our marketing isn't working.\"",
+       m:"in",
+       r:"\"Marketing\" isn't a thing that can fail; it's a word covering about nine things. Somewhere between a person first hearing the name and a person paying, there is exactly one step where most of them stop. That step is the actual problem, it is much smaller than \"marketing\", and you can usually find it in an afternoon."}
+    ],
+    solo:[
+      {s:"You never have time to learn the thing that would save you time.",
+       m:"loop",
+       r:"No time → don't learn the time-saver → still no time. It's self-sealing, and self-sealing loops never open by trying harder <em>inside</em> them — the loop is what's converting your effort into more loop. They open when someone spends, once, a resource they've decided they can't afford."},
+      {s:"A charity finds that donations drop every time it publishes how efficiently it spends money.",
+       m:"seat",
+       r:"From the donor's chair the message isn't \"we're careful with your money.\" It reads as \"we're fine.\" Efficiency sounds like <em>sufficiency</em>, and nobody rushes to rescue something that's coping. The numbers were true and the reader was wrong — which is a failure of seating, not of honesty."}
+    ]
+  }
+};
+
+const app = document.getElementById("app");
+let track=null, answers=[], step=0, plan=[];
+
+const esc = s => s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const lcFirst = s => s.charAt(0).toLowerCase()+s.slice(1);
+
+function dots(){
+  return '<div class="dots">'+plan.map((_,i)=>
+    `<div class="dot ${i<=step?'on':''}"></div>`).join('')+'</div>';
+}
+function header(text){
+  return `<div class="progress"><span>${text}</span>${dots()}</div>`;
+}
+
+/* ---------- start ---------- */
+function start(){
+  app.innerHTML = `
+    <div class="card">
+      <div class="eyebrow">Before we start</div>
+      <p class="situation">Most problems arrive pre-framed. Someone hands you the situation
+      <em>and</em> the way to look at it, in the same breath — and the second part is invisible.</p>
+      <p style="color:var(--muted);margin:14px 0 0">This game is about noticing that, and then doing
+      something about it. There are six moves. You'll watch two, try two with the name given, and
+      two on your own. <strong>Nothing you write is scored</strong> — there's no right answer to
+      compare against, only another one to look at.</p>
+      <div class="label">Who's playing?</div>
+      <select id="track">
+        <option value="younger">${TRACKS.younger.label}</option>
+        <option value="older">${TRACKS.older.label}</option>
+      </select>
+      <div class="row"><button onclick="begin()">Start</button></div>
+    </div>`;
+}
+
+window.begin = function(){
+  track = TRACKS[document.getElementById("track").value];
+  plan = [
+    ...track.watch.map(d=>({type:"watch",d})),
+    ...track.guided.map(d=>({type:"guided",d})),
+    ...track.solo.map(d=>({type:"solo",d}))
+  ];
+  step=0; answers=[]; render();
+};
+
+/* ---------- phases ---------- */
+function render(){
+  if(step>=plan.length) return finish();
+  const {type,d}=plan[step];
+  if(type==="watch")  return watch(d);
+  if(type==="guided") return guided(d);
+  return solo(d);
+}
+
+/* Phase 1 — worked example. Reveal, then make them NAME the move. */
+function watch(d){
+  app.innerHTML = header(`Watch · ${step+1} of ${plan.length}`) + `
+    <div class="card">
+      <div class="eyebrow">The situation</div>
+      <p class="situation">${d.s}</p>
+      <div class="row"><button onclick="showWatch()">Show me the other way to see it</button></div>
+      <div id="rev" class="hidden"></div>
+    </div>`;
+  window.showWatch = () => {
+    const rev=document.getElementById("rev");
+    rev.className="";
+    rev.innerHTML = `
+      <div class="label">Seen another way</div>
+      <div class="reveal"><p>${d.r}</p></div>
+      <hr>
+      <div class="eyebrow">Now name it</div>
+      <p style="margin:0 0 12px;color:var(--muted)">Which move was that? This is the part that
+      matters — a reframe you can't name is a story you heard, not a tool you have.</p>
+      <div class="choices">${
+        Object.entries(MOVES).map(([k,m])=>
+          `<button class="choice" data-k="${k}"><b>${m.name}</b><span>${m.hint}</span></button>`
+        ).join("")}</div>
+      <div id="verdict"></div>`;
+    rev.querySelectorAll(".choice").forEach(b=>{
+      b.onclick=()=>{
+        const right = b.dataset.k===d.m;
+        rev.querySelectorAll(".choice").forEach(x=>{
+          x.disabled=true;
+          if(x.dataset.k===d.m) x.classList.add("right");
+          else if(x===b) x.classList.add("wrong");
+        });
+        document.getElementById("verdict").innerHTML =
+          `<p class="note">${right
+            ? "<strong>That's it.</strong> "+MOVES[d.m].name+" — "+lcFirst(MOVES[d.m].hint)
+            : "<strong>It was "+MOVES[d.m].name+".</strong> "+MOVES[d.m].hint+
+              " Worth re-reading the reframe with that in mind — the move is easier to see the second time."}</p>
+           <div class="row"><button onclick="next()">Next</button></div>`;
+      };
+    });
+  };
+}
+
+/* Phase 2 — move named, player generates, then compares. */
+function guided(d){
+  const m=MOVES[d.m];
+  app.innerHTML = header(`Your turn, with the name · ${step+1} of ${plan.length}`) + `
+    <div class="card">
+      <div class="eyebrow">The situation</div>
+      <p class="situation">${d.s}</p>
+      <div class="movetag">Use: ${m.name}</div>
+      <p class="note" style="margin-top:8px">${m.hint}</p>
+      <div class="label">Write the other way of seeing it. A sentence or two is plenty.</div>
+      <textarea id="ans" placeholder="Try it before you look. Looking first feels like learning and isn't."></textarea>
+      <div class="row"><button onclick="compare()">I've written mine — compare</button></div>
+      <div id="rev" class="hidden"></div>
+    </div>`;
+  wireCompare(d,m.name);
+}
+
+/* Phase 3 — scaffolding gone. */
+function solo(d){
+  app.innerHTML = header(`On your own · ${step+1} of ${plan.length}`) + `
+    <div class="card">
+      <div class="eyebrow">The situation</div>
+      <p class="situation">${d.s}</p>
+      <p class="note">No move given this time. Pick one — or find a way we didn't list.</p>
+      <div class="label">Write the other way of seeing it.</div>
+      <textarea id="ans" placeholder="Try it before you look."></textarea>
+      <div class="row"><button onclick="compare()">I've written mine — compare</button></div>
+      <div id="rev" class="hidden"></div>
+    </div>`;
+  wireCompare(d,null);
+}
+
+function wireCompare(d,givenMove){
+  window.compare = () => {
+    const mine=document.getElementById("ans").value.trim();
+    answers.push({s:d.s, mine, move:MOVES[d.m].name, expert:d.r});
+    const rev=document.getElementById("rev");
+    rev.className="";
+    rev.innerHTML = `
+      <hr>
+      <div class="label">One other person's version</div>
+      <div class="reveal"><p>${d.r}</p></div>
+      <div class="movetag">${givenMove?"That was":"Move used:"} ${MOVES[d.m].name}</div>
+      <p class="note">${givenMove
+        ? "Not a right answer — just a different one. The question worth sitting with is whether yours moved the <em>boundary</em> of the problem, or only its tone."
+        : "If you picked a different move and it worked, that's a better outcome than matching. Several moves usually fit; the failure is using none."}</p>
+      <div class="row"><button onclick="next()">Next</button></div>`;
+    document.getElementById("ans").disabled=true;
+  };
+}
+
+window.next = () => { step++; render(); };
+
+/* ---------- end ---------- */
+function finish(){
+  app.innerHTML = `
+    <div class="card">
+      <div class="eyebrow">Done</div>
+      <p class="situation">The six moves are the part worth keeping. The situations were
+      disposable; these aren't.</p>
+      <div class="movelist">${
+        Object.values(MOVES).map(m=>
+          `<div class="move"><b>${m.name}</b><span>${m.hint}</span></div>`).join("")}</div>
+      <p class="note">Next time something feels stuck, the useful question isn't "what should I do."
+      It's <strong>"whose frame is this, and which of the six would move it?"</strong></p>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">What you wrote</div>
+      ${answers.map(a=>`
+        <div style="margin-bottom:20px">
+          <p style="margin:0 0 6px;font-size:15px;color:var(--muted)">${esc(a.s)}</p>
+          <div class="yours">${a.mine?esc(a.mine):"(left blank)"}</div>
+          <p class="note" style="margin-top:6px">Move: ${a.move}</p>
+        </div>`).join("")}
+      <div class="row"><button class="ghost" onclick="copyAll()">Copy everything I wrote</button></div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">For the person who made this</div>
+      <p style="margin:0 0 10px">Two questions, and the second one is the useful one:</p>
+      <p style="margin:0 0 4px"><strong>1. Which situation actually made you stop and think?</strong></p>
+      <p style="margin:0 0 14px"><strong>2. Which bit was boring?</strong> Say it plainly. A prototype
+      that nobody found boring usually means nobody finished it.</p>
+      <div class="row"><button onclick="location.reload()">Play again</button></div>
+    </div>`;
+  window.copyAll = () => {
+    const t = answers.map(a=>`SITUATION: ${a.s}\nMINE: ${a.mine||"(blank)"}\nMOVE: ${a.move}\n`).join("\n");
+    navigator.clipboard?.writeText(t).then(
+      ()=>alert("Copied."), ()=>alert("Couldn't copy — select the text by hand."));
+  };
+}
+
+start();
+</script>
+</body>
+</html>
