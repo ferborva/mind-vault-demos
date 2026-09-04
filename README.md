@@ -4,15 +4,20 @@ Playable prototypes. Early, rough, and meant to be tried rather than admired.
 
 ## Memory Tricks
 
-**Three memory tricks you actually keep.** Pick one:
+**Three memory tricks you actually keep** — and six levels of each, so it keeps getting harder
+as you get better.
 
-- 🎬 **Silly Film** — remember a list by joining things together in a ridiculous picture.
-- 🏠 **Memory Palace** — hide things around your own bedroom, then walk round and collect them.
-  Two thousand years old and still the best one.
+- 🎬 **Silly Film** — remember a list by joining things into a ridiculous picture. From level 4
+  you have to give them back *in order*.
+- 🏠 **Memory Palace** — build your own route through your home, then hide things along it.
+  The route grows as you improve.
 - 🙂 **Name Game** — never forget a name again.
 
-Five minutes each. **No typing anywhere.** Your best scores are remembered, and tips unlock as you
-play. Best for roughly ages 8 and up.
+Get all three to level 3 and **The Grand Tour** opens: all three tricks, back to back, one score.
+Nine badges to find along the way.
+
+Five minutes a go. **No typing anywhere.** Nothing is stored or sent — your scores live only in
+your own browser.
 
 **▶️ [Play it](https://ferborva.github.io/mind-vault-demos/memory/)**
 
