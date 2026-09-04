@@ -67,6 +67,8 @@
   /* palace */
   .spots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
   .spot{background:var(--panel);border:2px dashed var(--line);border-radius:14px;padding:12px 6px}
+  button.spot{box-shadow:none; background:var(--panel)}
+  button.spot:active{transform:scale(.96); box-shadow:none}
   .spot .se{font-size:34px} .spot .sn{font-size:12.5px;color:var(--muted);font-weight:700;margin-top:3px}
   .spot.placed{border-style:solid;border-color:var(--p2)}
   .spot .put{font-size:26px;margin-top:4px}
@@ -105,8 +107,11 @@ const NAMES={"🐘":"elephant","🎸":"guitar","🍌":"banana","🚀":"rocket","
 "🎃":"pumpkin","🪃":"boomerang","🧀":"cheese","🚁":"helicopter","🦒":"giraffe","🕯️":"candle",
 "🪑":"chair","🍰":"cake","🐢":"turtle","🎺":"trumpet","🧊":"ice cube","🪁":"kite"};
 const POOL=Object.keys(NAMES);
-const SPOTS=[{e:"🚪",n:"the door"},{e:"🛏️",n:"your bed"},{e:"🪟",n:"the window"},
-  {e:"🧸",n:"the toy box"},{e:"💡",n:"the lamp"},{e:"🪣",n:"the floor"}];
+const ALLSPOTS=[{e:"🚪",n:"the door"},{e:"🛏️",n:"your bed"},{e:"🪟",n:"the window"},
+  {e:"🧸",n:"the toy box"},{e:"💡",n:"the lamp"},{e:"🪑",n:"the chair"},{e:"📚",n:"the shelf"},
+  {e:"🚿",n:"the shower"},{e:"🧺",n:"the washing basket"},{e:"🪞",n:"the mirror"},
+  {e:"🛋️",n:"the sofa"},{e:"🧊",n:"the fridge"}];
+function myPalace(){ return (P.palace||[]).map(i=>ALLSPOTS[i]).filter(Boolean); }
 const PEOPLE=[
  {f:"👩‍🦰",n:"Rosa",h:"Rosa has <b>rose</b>-red hair."},
  {f:"🧔",n:"Ben",h:"Ben's <b>beard</b> begins with B."},
@@ -317,22 +322,59 @@ function m1r3(){
 /* ================= MODE 2 — MEMORY PALACE ================= */
 function m2intro(){
   used=[];S={};
+  const mine=myPalace();
   app.innerHTML=`<h1>🏠 Memory Palace</h1>
     <p class="muted">The oldest trick there is. Greek speakers used it 2,000 years ago.</p>
     <div class="card" style="text-align:left">
-      <p style="font-size:20px"><b>Hide things around a room you know.</b></p>
-      <p class="muted" style="font-size:17px">You already know your own room perfectly. So put each
+      <p style="font-size:20px"><b>Hide things around a place you know.</b></p>
+      <p class="muted" style="font-size:17px">You already know your own home perfectly. So put each
       thing somewhere in it — then walk round and collect them.</p>
-      <div class="spots">${SPOTS.map(s=>`<div class="spot"><div class="se">${s.e}</div>
-        <div class="sn">${s.n}</div></div>`).join("")}</div>
-      <p class="muted" style="font-size:16px">This is <b>your</b> palace. Same six places every time.</p>
+      ${mine.length===6?`
+        <p class="muted" style="font-size:16px;margin-top:14px"><b>Your palace:</b></p>
+        <div class="spots">${mine.map(s2=>`<div class="spot placed"><div class="se">${s2.e}</div>
+          <div class="sn">${s2.n}</div></div>`).join("")}</div>
+        <p class="muted" style="font-size:15px">Same six places, same order, every time. That's what
+        makes it work.</p>`
+      :`<p class="muted" style="font-size:16px;margin-top:12px">First, <b>build your own palace</b> —
+        six places, in the order you'd walk past them.</p>`}
     </div>
-    <button onclick="m2place()">Start hiding</button>
+    ${mine.length===6
+      ? `<button onclick="m2place()">Hide things</button>
+         <button class="calm" onclick="m2build()" style="display:block;margin:8px auto 0">Rebuild my palace</button>`
+      : `<button onclick="m2build()">Build my palace</button>`}
     <button class="calm" onclick="home()" style="display:block;margin:8px auto 0">Back</button>`;
 }
+
+/* She chooses and orders the six places. Saved, and reused with any items. */
+function m2build(){
+  const chosen=[];
+  function draw(){
+    app.innerHTML=`<h1>Build your palace</h1>
+      <p class="muted">Tap six places, in the order you'd walk past them at home.</p>
+      <div class="card"><p class="muted" style="font-size:15px">Your route so far</p>
+        <div class="spots">${[0,1,2,3,4,5].map(k=>{
+          const c=chosen[k]!==undefined?ALLSPOTS[chosen[k]]:null;
+          return `<div class="spot ${c?'placed':''}"><div class="se">${c?c.e:"·"}</div>
+            <div class="sn">${c?c.n:`place ${k+1}`}</div></div>`;}).join("")}</div></div>
+      <div class="spots">${ALLSPOTS.map((s2,i)=>
+        chosen.includes(i)?`<div class="spot" style="opacity:.25"><div class="se">${s2.e}</div>
+          <div class="sn">${s2.n}</div></div>`
+        :`<button class="spot" data-i="${i}" style="cursor:pointer;color:inherit;font-family:inherit">
+           <div class="se">${s2.e}</div><div class="sn">${s2.n}</div></button>`).join("")}</div>
+      ${chosen.length?`<button class="calm" id="undo">Undo last</button>`:``}
+      ${chosen.length===6?`<button id="done">That's my palace</button>`:``}`;
+    document.querySelectorAll(".spot[data-i]").forEach(b=>b.onclick=()=>{
+      if(chosen.length<6){ chosen.push(+b.dataset.i); draw(); }});
+    const u=document.getElementById("undo"); if(u) u.onclick=()=>{chosen.pop();draw();};
+    const d=document.getElementById("done"); if(d) d.onclick=()=>{
+      P.palace=chosen.slice(); save(P); m2intro(); };
+  }
+  draw();
+}
+
 function m2place(){
   const it=pick(6);
-  S.pairs=SPOTS.map((s,i)=>({spot:s,item:it[i]}));
+  S.pairs=myPalace().map((s,i)=>({spot:s,item:it[i]}));
   let i=0;
   (function step(){
     if(i>=S.pairs.length){ m2walk(); return; }
@@ -341,7 +383,7 @@ function m2place(){
       <div class="stage"><p class="big">${p.item}</p><p class="word">${nm(p.item)}</p>
       <p class="link">Put it on <b>${p.spot.n}</b> ${p.spot.e} — picture it there, huge and silly.</p>
       <div class="pips">${S.pairs.map((_,k)=>`<div class="pip ${k<=i?'on':''}"></div>`).join("")}</div></div>
-      <div class="spots">${SPOTS.map((s,k)=>`<div class="spot ${k<=i?'placed':''}">
+      <div class="spots">${myPalace().map((s,k)=>`<div class="spot ${k<=i?'placed':''}">
         <div class="se">${s.e}</div><div class="sn">${s.n}</div>
         <div class="put">${k<=i?S.pairs[k].item:"&nbsp;"}</div></div>`).join("")}</div>`;
     i++; setTimeout(step,3600);
