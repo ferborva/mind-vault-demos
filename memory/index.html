@@ -107,6 +107,9 @@ const NAMES={"🐘":"elephant","🎸":"guitar","🍌":"banana","🚀":"rocket","
 "🎃":"pumpkin","🪃":"boomerang","🧀":"cheese","🚁":"helicopter","🦒":"giraffe","🕯️":"candle",
 "🪑":"chair","🍰":"cake","🐢":"turtle","🎺":"trumpet","🧊":"ice cube","🪁":"kite"};
 const POOL=Object.keys(NAMES);
+const ACTIONS=["is riding","is eating","is wearing","is smashing into","is juggling",
+  "is dancing with","is hiding inside","is throwing","is tickling","is painting",
+  "is sitting on","is racing"];
 const ALLSPOTS=[{e:"🚪",n:"the door"},{e:"🛏️",n:"your bed"},{e:"🪟",n:"the window"},
   {e:"🧸",n:"the toy box"},{e:"💡",n:"the lamp"},{e:"🪑",n:"the chair"},{e:"📚",n:"the shelf"},
   {e:"🚿",n:"the shower"},{e:"🧺",n:"the washing basket"},{e:"🪞",n:"the mirror"},
@@ -140,7 +143,8 @@ let used=[],S={},done=0;
 function load(){ try{ return JSON.parse(localStorage.getItem("memtricks")||"{}"); }catch(e){ return {}; } }
 function save(o){ try{ localStorage.setItem("memtricks",JSON.stringify(o)); }catch(e){} }
 let P=load();
-function best(k,v){ P[k]=Math.max(P[k]||0,v); P.done=Object.keys(P).filter(x=>x!=="done").length; save(P); }
+function best(k,v){ P[k]=Math.max(P[k]||0,v);
+  P.done=["m1","m2","m3"].filter(x=>P[x]!==undefined).length; save(P); }
 function pick(n){ const a=POOL.filter(e=>!used.includes(e)); const g=sh(a).slice(0,n); used=used.concat(g); return g; }
 
 /* ================= HOME ================= */
@@ -296,27 +300,61 @@ function m1r2(){
     }));
 }
 function m1r3(){
-  const it=pick(10);
-  flash(it,{label:"Round 3 — your own film",per:3400,
-    hint:(a,i)=>i===0?`Start your film with the <b>${nm(a[0])}</b>.`
-      :`Connect it to the <b>${nm(a[i-1])}</b>. Your own picture!`},
-    ()=>gridRecall(it,"Round 3",(r,t)=>{
-      S.r3={r,t}; best("m1",r);
-      const pc=s=>Math.round(100*s.r/s.t);
-      app.innerHTML=`<h1>${r>S.r1.r?"Look what you just did":"Nice work"}</h1>
-      <div class="card"><div class="bars">
-        <div class="bar"><b>Round 1 — no trick</b><div class="track"><div class="fill" id="f1">${S.r1.r}/${S.r1.t}</div></div></div>
-        <div class="bar"><b>Round 2 — with help</b><div class="track"><div class="fill" id="f2">${S.r2.r}/${S.r2.t}</div></div></div>
-        <div class="bar"><b>Round 3 — on your own</b><div class="track"><div class="fill best" id="f3">${r}/${t}</div></div></div>
-      </div></div>
-      <div class="card" style="text-align:left"><p style="font-size:20px"><b>The trick is yours now. 🧠</b></p>
-      <p class="muted" style="font-size:16px">Two rules: join each thing to the next, and make it silly.
-      Try it tomorrow on something real — that's when you'll know it stuck.</p></div>
-      <button onclick="home()">Pick another trick</button>`;
-      setTimeout(()=>{document.getElementById("f1").style.width=Math.max(pc(S.r1),16)+"%";
-        document.getElementById("f2").style.width=Math.max(pc(S.r2),16)+"%";
-        document.getElementById("f3").style.width=Math.max(pc({r,t}),16)+"%";},250);
-    }));
+  const it=pick(8); S.film=[];
+  let i=0;
+  function step(){
+    if(i>=it.length){ return gridRecall(it,"Round 3",(r,t)=>{ S.r3={r,t}; best("m1",r); m1finish(it); }); }
+    if(i===0){
+      app.innerHTML=`<p class="muted">Round 3 — build your own film</p>
+        <div class="stage"><p class="big">${it[0]}</p><p class="word">${nm(it[0])}</p>
+        <p class="link">Your film starts here. Picture it.</p></div>
+        <button onclick="window.__go()">Next</button>`;
+      window.__go=()=>{i++;step();};
+      return;
+    }
+    const prev=it[i-1], cur=it[i];
+    const opts=sh(ACTIONS).slice(0,4);
+    app.innerHTML=`<p class="muted">Round 3 — ${i} of ${it.length-1} joins</p>
+      <div class="stage" style="min-height:190px">
+        <p class="big" style="font-size:64px">${prev} &nbsp;${cur}</p>
+        <p class="word">${nm(prev)} … ${nm(cur)}</p>
+        <p class="link">How do they join? <b>You choose.</b></p></div>
+      <h2 style="margin-top:12px;font-size:20px">The ${nm(prev)}…</h2>
+      <div class="opts">${opts.map(o=>`<button class="opt" data-a="${o}">${o} the ${nm(cur)}</button>`).join("")}</div>`;
+    document.querySelectorAll(".opt").forEach(btn=>btn.onclick=()=>{
+      S.film.push({a:prev,b:cur,act:btn.dataset.a});
+      document.querySelectorAll(".opt").forEach(x=>{x.onclick=null;});
+      btn.classList.add("right");
+      setTimeout(()=>{i++;step();},650);
+    });
+  }
+  step();
+}
+
+/* The film she built is replayed back to her before the score. */
+function m1finish(it){
+  const pc=s2=>Math.round(100*s2.r/s2.t);
+  const r=S.r3.r,t=S.r3.t;
+  app.innerHTML=`<h1>${r>S.r1.r?"Look what you just did":"Nice work"}</h1>
+    <div class="card" style="text-align:left">
+      <p class="muted" style="font-size:15px">🎬 THE FILM YOU MADE</p>
+      ${S.film.map(f=>`<p style="font-size:17px;margin:8px 0">
+        <span style="font-size:26px">${f.a}</span> The <b>${nm(f.a)}</b> ${f.act} the
+        <b>${nm(f.b)}</b> <span style="font-size:26px">${f.b}</span></p>`).join("")}
+      <p class="muted" style="font-size:15px;margin-top:12px">Nobody else made this one.</p>
+    </div>
+    <div class="card"><div class="bars">
+      <div class="bar"><b>Round 1 — no trick</b><div class="track"><div class="fill" id="f1">${S.r1.r}/${S.r1.t}</div></div></div>
+      <div class="bar"><b>Round 2 — with help</b><div class="track"><div class="fill" id="f2">${S.r2.r}/${S.r2.t}</div></div></div>
+      <div class="bar"><b>Round 3 — your own film</b><div class="track"><div class="fill best" id="f3">${r}/${t}</div></div></div>
+    </div></div>
+    <div class="card" style="text-align:left"><p style="font-size:20px"><b>The trick is yours now. 🧠</b></p>
+    <p class="muted" style="font-size:16px">Two rules: join each thing to the next, and make it silly.
+    Try it tomorrow on something real — that's when you'll know it stuck.</p></div>
+    <button onclick="home()">Pick another trick</button>`;
+  setTimeout(()=>{document.getElementById("f1").style.width=Math.max(pc(S.r1),16)+"%";
+    document.getElementById("f2").style.width=Math.max(pc(S.r2),16)+"%";
+    document.getElementById("f3").style.width=Math.max(pc({r,t}),16)+"%";},250);
 }
 
 /* ================= MODE 2 — MEMORY PALACE ================= */
