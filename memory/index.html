@@ -507,7 +507,8 @@ function m4r3(){
         <div class="card" style="text-align:left"><p style="font-size:20px"><b>Yours now. 🔒</b></p>
         <p class="muted" style="font-size:16px">Break it up, then picture it. Works on phone numbers,
         dates, door codes — anything with digits.</p></div>
-        <button onclick="home()">Pick another trick</button>`;
+        <button onclick="home()">Pick another trick</button>
+        ${progressLink()}`;
       setTimeout(()=>{document.getElementById('f1').style.width=Math.max(pc(S.r1),16)+'%';
         document.getElementById('f2').style.width=Math.max(pc(S.r2),16)+'%';
         document.getElementById('f3').style.width=Math.max(pc({r,t}),16)+'%';},250);
@@ -828,12 +829,46 @@ function progress(){
         ${curveSVG(hist(m),300,64)}</div>`).join('')}`:``}
     <button onclick="home()">Back</button>`;
 }
+/* Anyone who has finished a round has something to show, even if it predates
+   the record. A returning player carries best scores, levels and badges but no
+   history -- and hiding the entry point from THEM hid it from exactly the
+   person most likely to go looking for it. */
+function playedBefore(){
+  return (P.hist||[]).length>0 || !!P.done ||
+    ['m1','m2','m3','m4'].some(m=>P[m]!==undefined);
+}
+/* Offered at the end of a session, where the motivation to look is highest --
+   the score is still on screen and the round that just moved the line is the
+   one they just played. Only once there is a second point to draw. */
+function progressLink(){
+  return byDay(hist()).length>=2
+    ? `<button class="calm" onclick="progress()" style="display:block;margin:8px auto 0">
+        📈 See how you're doing</button>`
+    : '';
+}
+/* Fewer than two days of history is not a curve, and drawing one from a single
+   point would be a lie. But "come back later" was not an answer either: it told
+   someone who had just finished a session that there was nothing to see. So
+   this shows what IS known -- levels reached, badges earned -- and says plainly
+   where the line will start. */
 function progressEmpty(n){
+  const played=['m1','m2','m3','m4'].filter(m=>P[m]!==undefined);
   app.innerHTML=`<h1>How you're doing</h1>
-    <div class="card"><p class="big">${ic('📈')}</p>
-    <p class="muted" style="font-size:17px">${n?`One go down. <b>Have another and a line appears</b> —
-      it takes two goes to show a direction.`:`Play a trick and your progress starts drawing itself here.`}</p></div>
-    <button onclick="home()">Pick a trick</button>`;
+    <p class="muted">${n?`One go recorded. <b>The line needs two.</b>`
+      :`Your line starts with your next go.`}</p>
+    ${played.length?`<div class="card" style="text-align:left">
+      <p style="font-size:19px;margin:0 0 8px"><b>Where you are now</b></p>
+      ${played.map(m=>`<div class="ms"><span class="ic-wrap">${ic(MODE_IC[m])}</span>
+        <span class="ms-t">${MODE_NAME[m]}</span>
+        <span class="ms-d">level ${lv(m)} · best ${P[m]}</span></div>`).join('')}
+    </div>`:``}
+    ${badgeCount()?`<div class="card"><p class="muted" style="margin:0;font-size:16px">
+      ${badgeCount()} of ${BADGES.length} badges found.</p></div>`:``}
+    <div class="card" style="text-align:left"><p class="muted" style="font-size:16px;margin:0">
+      From here on, <b>every go you finish becomes a dot</b> — and the line through them is your
+      best ever, so it only goes up.${played.length?` What you have already done stays where it is:
+      levels and badges are not lost, they just started before the chart did.`:``}</p></div>
+    <button onclick="home()">${played.length?'Have a go':'Pick a trick'}</button>`;
 }
 
 /* ================= HOME ================= */
@@ -869,7 +904,7 @@ function home(){
       <button class="calm" onclick="badges()" style="flex:1;margin-top:6px">
         🏅 Badges (${badgeCount()}/${BADGES.length})</button>
     </div>
-    ${(P.hist||[]).length?`<button class="calm" onclick="progress()" style="margin-top:8px">
+    ${playedBefore()?`<button class="calm" onclick="progress()" style="margin-top:8px">
       📈 How you're doing</button>`:``}`;
 }
 function tips(){
@@ -1154,7 +1189,8 @@ function m1finish(it){
     <div class="card" style="text-align:left"><p style="font-size:20px"><b>The trick is yours now. 🧠</b></p>
     <p class="muted" style="font-size:16px">Two rules: join each thing to the next, and make it silly.
     Try it tomorrow on something real — that's when you'll know it stuck.</p></div>
-    <button onclick="home()">Pick another trick</button>`;
+    <button onclick="home()">Pick another trick</button>
+    ${progressLink()}`;
   setTimeout(()=>{document.getElementById("f1").style.width=Math.max(pc(S.r1),16)+"%";
     document.getElementById("f2").style.width=Math.max(pc(S.r2),16)+"%";
     document.getElementById("f3").style.width=Math.max(pc({r,t}),16)+"%";},250);
@@ -1259,6 +1295,7 @@ function m2walk(){
        :mv===-1?`<p class="muted">Back a level — let's make that route shorter.</p>`:``}
       ${mastery?`<div class="card" style="border:2px solid var(--good)"><p style="margin:0;font-size:19px">${ic('🧠')} <b style="color:var(--good)">Badge: All three tricks</b> — the Grand Tour is open.</p></div>`:``}
       <button onclick="m2intro()">Hide new things</button>
+      ${progressLink()}
       <button class="calm" onclick="home()" style="display:block;margin:8px auto 0">Pick another trick</button>`;
   });
 }
@@ -1316,6 +1353,7 @@ function m3quiz(){
        :mv===-1?`<p class="muted">Back a level — a smaller crowd next time.</p>`:``}
       ${mastery?`<div class="card" style="border:2px solid var(--good)"><p style="margin:0;font-size:19px">${ic('🧠')} <b style="color:var(--good)">Badge: All three tricks</b> — the Grand Tour is open.</p></div>`:``}
       <button onclick="m3meet()">Meet more people</button>
+      ${progressLink()}
       <button class="calm" onclick="home()" style="display:block;margin:8px auto 0">Pick another trick</button>`;
   });
 }
