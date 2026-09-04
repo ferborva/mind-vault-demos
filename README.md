@@ -2,12 +2,17 @@
 
 Playable prototypes. Early, rough, and meant to be tried rather than admired.
 
-## The Memory Trick
+## Memory Tricks
 
-Five minutes. You'll be shown some things and asked to remember them — then taught
-a trick that magicians use, and asked again. **Your own score is the point.**
+**Three memory tricks you actually keep.** Pick one:
 
-No typing anywhere. Best for roughly ages 8 and up.
+- 🎬 **Silly Film** — remember a list by joining things together in a ridiculous picture.
+- 🏠 **Memory Palace** — hide things around your own bedroom, then walk round and collect them.
+  Two thousand years old and still the best one.
+- 🙂 **Name Game** — never forget a name again.
+
+Five minutes each. **No typing anywhere.** Your best scores are remembered, and tips unlock as you
+play. Best for roughly ages 8 and up.
 
 **▶️ [Play it](https://ferborva.github.io/mind-vault-demos/memory/)**
 

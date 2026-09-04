@@ -3,69 +3,86 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Memory Trick</title>
+<title>Memory Tricks</title>
 <style>
   :root{
-    --bg:#101a2e; --panel:#1b2842; --ink:#f2f6ff; --muted:#93a3c4;
-    --line:#2c3c5e; --hot:#ffb020; --hot-ink:#3a2500;
-    --good:#3ddc97; --bad:#ff6b6b; --radius:18px;
+    --bg:#101a2e; --panel:#1b2842; --panel2:#22304e; --ink:#f2f6ff; --muted:#93a3c4;
+    --line:#2c3c5e; --hot:#ffb020; --hot-ink:#3a2500; --good:#3ddc97; --bad:#ff6b6b;
+    --p1:#ffb020; --p2:#7aa2ff; --p3:#ff8fc7; --radius:18px;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
-  body{
-    margin:0; background:var(--bg); color:var(--ink); overflow-x:hidden;
-    font:600 18px/1.45 ui-rounded,"SF Pro Rounded",-apple-system,"Segoe UI",system-ui,sans-serif;
-  }
-  .wrap{max-width:620px; margin:0 auto; padding:20px 16px 60px; text-align:center}
-  h1{font-size:34px; line-height:1.1; margin:8px 0 4px; letter-spacing:-.02em}
-  p{margin:0 0 14px}
+  body{margin:0; background:var(--bg); color:var(--ink); overflow-x:hidden;
+    font:600 18px/1.45 ui-rounded,"SF Pro Rounded",-apple-system,"Segoe UI",system-ui,sans-serif;}
+  .wrap{max-width:620px; margin:0 auto; padding:18px 16px 60px; text-align:center}
+  h1{font-size:32px; line-height:1.1; margin:6px 0 4px; letter-spacing:-.02em}
+  h2{font-size:24px; margin:0 0 6px}
+  p{margin:0 0 12px}
   .muted{color:var(--muted); font-weight:600; font-size:16px}
-  button{
-    font:800 20px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
+  button{font:800 20px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
     background:var(--hot); color:var(--hot-ink); border:0; border-radius:999px;
-    padding:16px 34px; cursor:pointer; box-shadow:0 5px 0 #c9820f; margin-top:10px;
-  }
+    padding:15px 32px; cursor:pointer; box-shadow:0 5px 0 #c9820f; margin-top:10px;}
   button:active{transform:translateY(3px); box-shadow:0 2px 0 #c9820f}
-  button.calm{background:transparent; color:var(--ink); border:2px solid var(--line); box-shadow:none}
+  button.calm{background:transparent;color:var(--ink);border:2px solid var(--line);box-shadow:none}
   button.calm:active{transform:none}
-  .card{background:var(--panel); border-radius:var(--radius); padding:22px 18px; margin:14px 0}
-  /* the big show-one-item stage */
-  .stage{
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    min-height:290px; background:var(--panel); border-radius:var(--radius); padding:18px;
-  }
-  .big{font-size:104px; line-height:1; margin:0}
-  .word{font-size:28px; font-weight:800; margin-top:8px; letter-spacing:-.01em}
-  .link{
-    color:var(--hot); font-size:17px; font-weight:700; margin-top:14px;
-    max-width:420px; min-height:48px;
-  }
-  .pips{display:flex; gap:6px; justify-content:center; margin-top:16px}
-  .pip{width:9px; height:9px; border-radius:99px; background:var(--line)}
-  .pip.on{background:var(--hot)}
-  /* recall grid */
-  .grid{display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-top:8px}
-  @media(max-width:400px){ .grid{gap:7px} }
-  .tile{
-    aspect-ratio:1; font-size:34px; background:var(--panel); border:2px solid var(--line);
-    border-radius:14px; cursor:pointer; display:flex; align-items:center; justify-content:center;
-    position:relative; padding:0; box-shadow:none; color:inherit;
-  }
-  .tile:active{transform:scale(.94); box-shadow:none}
-  .tile.picked{border-color:var(--hot); background:#2a3555}
-  .tile.right{border-color:var(--good); background:rgba(61,220,151,.16)}
-  .tile.wrong{border-color:var(--bad); background:rgba(255,107,107,.14); opacity:.75}
-  .tile.missed{border-style:dashed; border-color:var(--good); opacity:.55}
-  .tick{position:absolute; top:-8px; right:-8px; font-size:19px}
-  .score{font-size:60px; font-weight:800; line-height:1; margin:6px 0 2px}
-  .bars{display:flex; flex-direction:column; gap:12px; margin:18px 0 6px; text-align:left}
-  .bar b{display:block; font-size:14px; color:var(--muted); margin-bottom:5px}
-  .track{background:var(--line); border-radius:99px; height:30px; overflow:hidden}
-  .fill{
-    height:100%; background:var(--hot); color:var(--hot-ink); border-radius:99px;
-    display:flex; align-items:center; justify-content:flex-end; padding-right:11px;
-    font-size:15px; font-weight:800; width:0; transition:width .9s cubic-bezier(.2,.8,.2,1);
-  }
+  .card{background:var(--panel); border-radius:var(--radius); padding:20px 18px; margin:12px 0}
+  /* mode chooser */
+  .mode{display:flex; align-items:center; gap:14px; text-align:left; width:100%;
+    background:var(--panel); border:2px solid var(--line); border-radius:var(--radius);
+    padding:16px; margin-bottom:11px; cursor:pointer; color:inherit; box-shadow:none;
+    font-family:inherit;}
+  .mode:active{transform:scale(.985); box-shadow:none}
+  .mode .ic{font-size:40px; line-height:1; flex:0 0 auto}
+  .mode .tx{flex:1}
+  .mode .tt{display:block; font-size:19px; font-weight:800; line-height:1.2}
+  .mode .ds{display:block; font-size:14.5px; color:var(--muted); font-weight:600; margin-top:3px; line-height:1.3}
+  .mode .bs{font-size:13px; font-weight:800; color:var(--hot-ink); background:var(--hot);
+    border-radius:999px; padding:5px 11px; white-space:nowrap}
+  .mode.m1{border-color:var(--p1)} .mode.m2{border-color:var(--p2)} .mode.m3{border-color:var(--p3)}
+  /* stage */
+  .stage{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-height:280px; background:var(--panel); border-radius:var(--radius); padding:18px}
+  .big{font-size:96px; line-height:1; margin:0}
+  .word{font-size:27px; font-weight:800; margin-top:6px}
+  .link{color:var(--hot); font-size:17px; font-weight:700; margin-top:12px; max-width:430px; min-height:46px}
+  .pips{display:flex;gap:6px;justify-content:center;margin-top:14px}
+  .pip{width:9px;height:9px;border-radius:99px;background:var(--line)} .pip.on{background:var(--hot)}
+  /* grids */
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:8px}
+  .tile{aspect-ratio:1;font-size:33px;background:var(--panel);border:2px solid var(--line);
+    border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    position:relative;padding:0;box-shadow:none;color:inherit}
+  .tile:active{transform:scale(.94);box-shadow:none}
+  .tile.picked{border-color:var(--hot);background:#2a3555}
+  .tile.right{border-color:var(--good);background:rgba(61,220,151,.16)}
+  .tile.wrong{border-color:var(--bad);background:rgba(255,107,107,.14);opacity:.75}
+  .tile.missed{border-style:dashed;border-color:var(--good);opacity:.55}
+  .tick{position:absolute;top:-8px;right:-8px;font-size:19px}
+  /* multiple choice */
+  .opts{display:grid;gap:10px;margin-top:14px}
+  .opt{background:var(--panel2);border:2px solid var(--line);border-radius:14px;padding:15px;
+    font:800 19px/1 inherit;cursor:pointer;box-shadow:none;color:inherit;font-family:inherit}
+  .opt:active{transform:scale(.98);box-shadow:none}
+  .opt.right{border-color:var(--good);background:rgba(61,220,151,.18)}
+  .opt.wrong{border-color:var(--bad);opacity:.7}
+  /* palace */
+  .spots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+  .spot{background:var(--panel);border:2px dashed var(--line);border-radius:14px;padding:12px 6px}
+  .spot .se{font-size:34px} .spot .sn{font-size:12.5px;color:var(--muted);font-weight:700;margin-top:3px}
+  .spot.placed{border-style:solid;border-color:var(--p2)}
+  .spot .put{font-size:26px;margin-top:4px}
+  .score{font-size:58px;font-weight:800;line-height:1;margin:6px 0 2px}
+  .bars{display:flex;flex-direction:column;gap:11px;margin:16px 0 4px;text-align:left}
+  .bar b{display:block;font-size:14px;color:var(--muted);margin-bottom:5px}
+  .track{background:var(--line);border-radius:99px;height:28px;overflow:hidden}
+  .fill{height:100%;background:var(--hot);color:var(--hot-ink);border-radius:99px;display:flex;
+    align-items:center;justify-content:flex-end;padding-right:11px;font-size:15px;font-weight:800;
+    width:0;transition:width .9s cubic-bezier(.2,.8,.2,1)}
   .fill.best{background:var(--good)}
+  .tip{background:var(--panel);border-left:4px solid var(--hot);border-radius:0 12px 12px 0;
+    padding:13px 15px;margin-bottom:10px;text-align:left}
+  .tip.lock{opacity:.45;border-left-color:var(--line)}
+  .tip b{display:block;font-size:17px;margin-bottom:3px}
+  .tip span{font-size:15px;color:var(--muted);font-weight:600}
   .hidden{display:none}
 </style>
 </head>
@@ -77,215 +94,333 @@
 </div>
 <script>
 /* ---------------------------------------------------------------
-   THE MEMORY TRICK — teaches the link/story method.
-   Not a brain-training game: working-memory drills don't transfer.
-   This teaches ONE portable technique and proves it works on the
-   child's own score, in about five minutes. No typing anywhere.
+   MEMORY TRICKS — three modes, three real techniques.
+   Each teaches a method you keep, rather than drilling recall.
+   No typing, no network, no tracking. Nothing leaves this page.
 --------------------------------------------------------------- */
+const NAMES={"🐘":"elephant","🎸":"guitar","🍌":"banana","🚀":"rocket","🐸":"frog","🎩":"hat",
+"🍕":"pizza","🦖":"dinosaur","🚲":"bike","🌵":"cactus","🐙":"octopus","🎈":"balloon","🧦":"sock",
+"🍩":"doughnut","🦉":"owl","🥁":"drum","🚂":"train","🍉":"melon","🐧":"penguin","🧸":"teddy",
+"🔦":"torch","🥕":"carrot","🦋":"butterfly","⚽":"football","🍄":"mushroom","🐝":"bee",
+"🎃":"pumpkin","🪃":"boomerang","🧀":"cheese","🚁":"helicopter","🦒":"giraffe","🕯️":"candle",
+"🪑":"chair","🍰":"cake","🐢":"turtle","🎺":"trumpet","🧊":"ice cube","🪁":"kite"};
+const POOL=Object.keys(NAMES);
+const SPOTS=[{e:"🚪",n:"the door"},{e:"🛏️",n:"your bed"},{e:"🪟",n:"the window"},
+  {e:"🧸",n:"the toy box"},{e:"💡",n:"the lamp"},{e:"🪣",n:"the floor"}];
+const PEOPLE=[
+ {f:"👩‍🦰",n:"Rosa",h:"Rosa has <b>rose</b>-red hair."},
+ {f:"🧔",n:"Ben",h:"Ben's <b>beard</b> begins with B."},
+ {f:"👵",n:"Pearl",h:"Pearl wears <b>pearls</b>."},
+ {f:"👨‍🦲",n:"Dom",h:"Dom's head is a shiny <b>dome</b>."},
+ {f:"👧",n:"Amy",h:"Amy is <b>aiming</b> at something."},
+ {f:"👴",n:"Norman",h:"Norman looks <b>normal</b>. Very."},
+ {f:"👩‍🦱",n:"Carly",h:"Carly's hair is <b>curly</b>."},
+ {f:"👦",n:"Finn",h:"Finn swims with <b>fins</b>."}];
+const TIPS=[
+ {need:0,t:"Silly beats sensible",d:"A weird picture sticks. A boring one slides straight off."},
+ {need:1,t:"Join things up",d:"Never remember a list. Join each thing to the next one in a picture."},
+ {need:1,t:"Say it out loud",d:"Describing your picture out loud makes it far harder to forget."},
+ {need:2,t:"Use a place you know",d:"Your own bedroom beats any imaginary castle. You already know the way round it."},
+ {need:2,t:"Always walk the same way",d:"Same route, same order, every time. That's what keeps things in order."},
+ {need:3,t:"Names hide in faces",d:"Find something on the face that sounds like the name, and put them together."},
+ {need:3,t:"Test yourself, don't re-read",d:"Covering it up and trying to remember beats reading it again. Every time."},
+ {need:3,t:"Come back tomorrow",d:"One quick go tomorrow is worth more than ten goes today."}];
 
-const NAMES = {"🐘":"elephant","🎸":"guitar","🍌":"banana","🚀":"rocket","🐸":"frog","🎩":"hat","🍕":"pizza","🦖":"dinosaur","🚲":"bike","🌵":"cactus","🐙":"octopus","🎈":"balloon","🧦":"sock","🍩":"doughnut","🦉":"owl","🥁":"drum","🚂":"train","🍉":"melon","🐧":"penguin","🧸":"teddy","🔦":"torch","🥕":"carrot","🦋":"butterfly","⚽":"football","🍄":"mushroom","🐝":"bee","🎃":"pumpkin","🪃":"boomerang","🧀":"cheese","🚁":"helicopter","🦒":"giraffe","🕯️":"candle"};
-const POOL = Object.keys(NAMES);
-const app = document.getElementById("app");
-const shuffle = a => a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(p=>p[1]);
-const name = e => NAMES[e] || "thing";
-let used = [], scores = {};
+const app=document.getElementById("app");
+const sh=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(p=>p[1]);
+const nm=e=>NAMES[e]||"thing";
+let used=[],S={},done=0;
 
-function pick(n){
-  const avail = POOL.filter(e => !used.includes(e) && NAMES[e]);
-  const got = shuffle(avail).slice(0,n);
-  used = used.concat(got);
-  return got;
+/* progress — best scores + modes completed. Degrades silently if storage is blocked. */
+function load(){ try{ return JSON.parse(localStorage.getItem("memtricks")||"{}"); }catch(e){ return {}; } }
+function save(o){ try{ localStorage.setItem("memtricks",JSON.stringify(o)); }catch(e){} }
+let P=load();
+function best(k,v){ P[k]=Math.max(P[k]||0,v); P.done=Object.keys(P).filter(x=>x!=="done").length; save(P); }
+function pick(n){ const a=POOL.filter(e=>!used.includes(e)); const g=sh(a).slice(0,n); used=used.concat(g); return g; }
+
+/* ================= HOME ================= */
+function home(){
+  used=[];
+  const modes=[
+    {k:"m1",ic:"🎬",tt:"Silly Film",ds:"Remember a list by joining things up",fn:"m1intro"},
+    {k:"m2",ic:"🏠",tt:"Memory Palace",ds:"Hide things around your own room",fn:"m2intro"},
+    {k:"m3",ic:"🙂",tt:"Name Game",ds:"Never forget a name again",fn:"m3intro"}];
+  app.innerHTML=`
+    <h1>Memory Tricks</h1>
+    <p class="muted">Three tricks. Pick one.</p>
+    ${modes.map((m,i)=>`
+      <button class="mode m${i+1}" onclick="${m.fn}()">
+        <span class="ic">${m.ic}</span>
+        <span class="tx"><span class="tt">${m.tt}</span><span class="ds">${m.ds}</span></span>
+        ${P[m.k]?`<span class="bs">best ${P[m.k]}</span>`:``}
+      </button>`).join("")}
+    <button class="calm" onclick="tips()" style="width:100%;margin-top:6px">
+      💡 Your tips (${TIPS.filter(t=>t.need<=(P.done||0)).length}/${TIPS.length})</button>`;
 }
-const linkText = (a,b) =>
-  `Picture the <b>${name(a)}</b> and the <b>${name(b)}</b> together — make it silly!`;
-
-/* ---------- 1. splash ---------- */
-function splash(){
-  app.innerHTML = `
-    <h1>The Memory Trick</h1>
-    <p class="muted">How many things can you remember?</p>
-    <div class="stage">
-      <p class="big">🧠</p>
-      <p class="word">Let's find out</p>
-      <p class="muted" style="margin-top:10px">Things will flash up. Remember as many as you can.</p>
-    </div>
-    <button onclick="round1()">Play</button>`;
+function tips(){
+  const d=P.done||0;
+  app.innerHTML=`
+    <h1>Your tips</h1>
+    <p class="muted">Play a new trick to unlock more.</p>
+    ${TIPS.map(t=> t.need<=d
+      ? `<div class="tip"><b>${t.t}</b><span>${t.d}</span></div>`
+      : `<div class="tip lock"><b>🔒 Locked</b><span>Play another trick to unlock this one.</span></div>`
+      ).join("")}
+    <button onclick="home()">Back</button>`;
 }
 
-/* ---------- generic show-items phase ---------- */
-function show(items, opts, done){
-  let i = 0;
-  const per = opts.per || 2400;
-  function frame(){
-    if(i >= items.length){ done(); return; }
-    const e = items[i];
-    const hint = opts.linked && i>0 ? linkText(items[i-1], e)
-               : opts.selfLink && i>0 ? `Connect it to the <b>${name(items[i-1])}</b>. Your own picture!`
-               : opts.selfLink || opts.linked ? `Start your story with the <b>${name(e)}</b>.` : "";
-    app.innerHTML = `
-      <p class="muted">${opts.label}</p>
-      <div class="stage">
-        <p class="big">${e}</p>
-        <p class="word">${name(e)}</p>
-        <p class="link">${hint}</p>
-        <div class="pips">${items.map((_,k)=>`<div class="pip ${k<=i?'on':''}"></div>`).join("")}</div>
-      </div>`;
-    i++;
-    setTimeout(frame, per);
-  }
-  frame();
+/* ============ shared: flash items ============ */
+function flash(items,opts,cb){
+  let i=0;
+  (function frame(){
+    if(i>=items.length){ cb(); return; }
+    const e=items[i];
+    const hint = opts.hint ? opts.hint(items,i) : "";
+    app.innerHTML=`<p class="muted">${opts.label}</p>
+      <div class="stage"><p class="big">${e.e||e}</p>
+      <p class="word">${e.w||nm(e)}</p><p class="link">${hint}</p>
+      <div class="pips">${items.map((_,k)=>`<div class="pip ${k<=i?'on':''}"></div>`).join("")}</div></div>`;
+    i++; setTimeout(frame,opts.per||2400);
+  })();
 }
-
-/* ---------- generic recall phase ---------- */
-function recall(items, label, done){
-  const decoys = shuffle(POOL.filter(e => !items.includes(e) && NAMES[e])).slice(0, items.length*2);
-  const tiles = shuffle(items.concat(decoys));
-  const picked = [];
-  app.innerHTML = `
-    <p class="muted">${label}</p>
-    <h1 style="font-size:25px">Tap the ${items.length} you saw</h1>
+/* ============ shared: grid recall ============ */
+function gridRecall(items,label,cb){
+  const dec=sh(POOL.filter(e=>!items.includes(e))).slice(0,items.length*2);
+  const tl=sh(items.concat(dec)); const picked=[];
+  app.innerHTML=`<p class="muted">${label}</p><h2>Tap the ${items.length} you saw</h2>
     <p class="muted" id="cnt">0 of ${items.length} chosen</p>
-    <div class="grid" id="g">${tiles.map(e=>`<button class="tile" data-e="${e}">${e}</button>`).join("")}</div>
-    <button id="go" class="calm" disabled style="opacity:.4">Check my answers</button>`;
-  const g = document.getElementById("g"), go = document.getElementById("go");
-  g.querySelectorAll(".tile").forEach(t=>{
-    t.onclick = () => {
-      const e = t.dataset.e, at = picked.indexOf(e);
-      if(at > -1){ picked.splice(at,1); t.classList.remove("picked"); t.querySelector(".tick")?.remove(); }
-      else if(picked.length < items.length){
-        picked.push(e); t.classList.add("picked");
-        t.insertAdjacentHTML("beforeend", '<span class="tick">⭐</span>');
-      }
-      document.getElementById("cnt").textContent = `${picked.length} of ${items.length} chosen`;
-      go.disabled = picked.length !== items.length;
-      go.style.opacity = go.disabled ? .4 : 1;
-    };
+    <div class="grid" id="g">${tl.map(e=>`<button class="tile" data-e="${e}">${e}</button>`).join("")}</div>
+    <button id="go" class="calm" disabled style="opacity:.4">Check</button>`;
+  const g=document.getElementById("g"), go=document.getElementById("go");
+  g.querySelectorAll(".tile").forEach(t=>t.onclick=()=>{
+    const e=t.dataset.e,at=picked.indexOf(e);
+    if(at>-1){picked.splice(at,1);t.classList.remove("picked");t.querySelector(".tick")?.remove();}
+    else if(picked.length<items.length){picked.push(e);t.classList.add("picked");
+      t.insertAdjacentHTML("beforeend",'<span class="tick">⭐</span>');}
+    document.getElementById("cnt").textContent=`${picked.length} of ${items.length} chosen`;
+    go.disabled=picked.length!==items.length; go.style.opacity=go.disabled?.4:1;
   });
-  go.onclick = () => {
-    let right = 0;
+  go.onclick=()=>{
+    let right=0;
     g.querySelectorAll(".tile").forEach(t=>{
-      const e = t.dataset.e, isTarget = items.includes(e), isPicked = picked.includes(e);
-      t.onclick = null;
-      t.querySelector(".tick")?.remove();
-      t.classList.remove("picked");
-      if(isPicked && isTarget){ t.classList.add("right"); right++;
-        t.insertAdjacentHTML("beforeend",'<span class="tick">✅</span>'); }
-      else if(isPicked){ t.classList.add("wrong");
-        t.insertAdjacentHTML("beforeend",'<span class="tick">❌</span>'); }
-      else if(isTarget){ t.classList.add("missed"); }
+      const e=t.dataset.e,isT=items.includes(e),isP=picked.includes(e);
+      t.onclick=null; t.querySelector(".tick")?.remove(); t.classList.remove("picked");
+      if(isP&&isT){t.classList.add("right");right++;t.insertAdjacentHTML("beforeend",'<span class="tick">✅</span>');}
+      else if(isP){t.classList.add("wrong");t.insertAdjacentHTML("beforeend",'<span class="tick">❌</span>');}
+      else if(isT){t.classList.add("missed");}
     });
-    go.outerHTML = `<button onclick="window.__next()">Next</button>`;
-    window.__next = () => done(right, items.length);
+    go.outerHTML=`<button onclick="window.__n()">Next</button>`;
+    window.__n=()=>cb(right,items.length);
   };
 }
+/* ============ shared: one-at-a-time multiple choice ============ */
+function quiz(qs,label,cb){
+  let i=0,right=0;
+  (function ask(){
+    if(i>=qs.length){ cb(right,qs.length); return; }
+    const q=qs[i];
+    app.innerHTML=`<p class="muted">${label} — ${i+1} of ${qs.length}</p>
+      <div class="stage" style="min-height:200px"><p class="big">${q.cue}</p>
+      <p class="word">${q.cueText||""}</p></div>
+      <h2 style="margin-top:14px">${q.ask}</h2>
+      <div class="opts">${sh(q.options).map(o=>
+        `<button class="opt" data-v="${o.v}">${o.label}</button>`).join("")}</div>`;
+    document.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+      const ok=b.dataset.v===q.answer;
+      if(ok)right++;
+      document.querySelectorAll(".opt").forEach(x=>{
+        x.onclick=null;
+        if(x.dataset.v===q.answer)x.classList.add("right");
+        else if(x===b)x.classList.add("wrong");
+      });
+      setTimeout(()=>{i++;ask();},900);
+    });
+  })();
+}
 
-/* ---------- 2. cold round ---------- */
-function round1(){
-  const items = pick(8);
-  show(items, {label:"Round 1 — just remember them"}, () =>
-    recall(items, "Round 1", (right,total) => {
-      scores.r1 = {right,total};
-      app.innerHTML = `
-        <p class="muted">Round 1</p>
-        <div class="card">
-          <p class="score">${right}<span style="font-size:24px;color:var(--muted)">/${total}</span></p>
-          <p class="muted">Most people get about 3 or 4 this way.</p>
-          <h1 style="font-size:26px;margin-top:18px">Want to know the trick?</h1>
-          <p class="muted">Magicians use it. It works on anything.</p>
-        </div>
-        <button onclick="teach()">Show me the trick</button>`;
+/* ================= MODE 1 — SILLY FILM ================= */
+function m1intro(){
+  used=[];S={};
+  app.innerHTML=`<h1>🎬 Silly Film</h1><p class="muted">How many things can you remember?</p>
+    <div class="stage"><p class="big">🧠</p><p class="word">Let's find out</p>
+    <p class="muted" style="margin-top:8px">Things will flash up. Remember as many as you can.</p></div>
+    <button onclick="m1r1()">Play</button>
+    <button class="calm" onclick="home()" style="display:block;margin:8px auto 0">Back</button>`;
+}
+function m1r1(){
+  const it=pick(8);
+  flash(it,{label:"Round 1 — just remember them"},()=>gridRecall(it,"Round 1",(r,t)=>{
+    S.r1={r,t};
+    app.innerHTML=`<p class="muted">Round 1</p><div class="card">
+      <p class="score">${r}<span style="font-size:23px;color:var(--muted)">/${t}</span></p>
+      <p class="muted">Most people get about 3 or 4 this way.</p>
+      <h2 style="margin-top:16px">Want to know the trick?</h2>
+      <p class="muted">Magicians use it. It works on anything.</p></div>
+      <button onclick="m1teach()">Show me</button>`;
+  }));
+}
+function m1teach(){
+  app.innerHTML=`<p class="muted">The trick</p><div class="card" style="text-align:left">
+    <p style="font-size:21px"><b>Don't remember a list. Make a silly film.</b></p>
+    <p class="muted" style="font-size:17px">Join each thing to the next in a picture so ridiculous
+    you couldn't forget it if you tried.</p>
+    <div style="text-align:center;margin:18px 0 6px">
+      <p style="font-size:52px;margin:0">🐘 ➕ 🎸</p>
+      <p class="link" style="margin:6px auto">The <b>elephant</b> plays the <b>guitar</b> with its
+      trunk. Badly. Very loud.</p>
+      <p style="font-size:52px;margin:12px 0 0">🎸 ➕ 🍌</p>
+      <p class="link" style="margin:6px auto">The strings are <b>bananas</b>. They snap when he strums.</p>
+    </div>
+    <p class="muted" style="font-size:16px"><b>Silly is the point.</b> Weird pictures stick.</p></div>
+    <button onclick="m1r2()">Let me try</button>`;
+}
+function m1r2(){
+  const it=pick(8);
+  flash(it,{label:"Round 2 — link each to the last",per:3400,
+    hint:(a,i)=>i===0?`Start your film with the <b>${nm(a[0])}</b>.`
+      :`Picture the <b>${nm(a[i-1])}</b> and the <b>${nm(a[i])}</b> together — silly!`},
+    ()=>gridRecall(it,"Round 2",(r,t)=>{
+      S.r2={r,t}; const up=r-S.r1.r;
+      app.innerHTML=`<p class="muted">Round 2</p><div class="card">
+        <p class="score">${r}<span style="font-size:23px;color:var(--muted)">/${t}</span></p>
+        <p style="font-size:21px;margin-top:4px">${up>0?`<b style="color:var(--good)">${up} more</b> than before! 🎉`
+          :up===0?`Same as last time — make them sillier.`:`Tricky one. Weirder pictures next time.`}</p></div>
+        <div class="card"><h2>Now the real test</h2>
+        <p class="muted"><b>You</b> make the pictures. No help. Ten things.</p></div>
+        <button onclick="m1r3()">I'm ready</button>`;
+    }));
+}
+function m1r3(){
+  const it=pick(10);
+  flash(it,{label:"Round 3 — your own film",per:3400,
+    hint:(a,i)=>i===0?`Start your film with the <b>${nm(a[0])}</b>.`
+      :`Connect it to the <b>${nm(a[i-1])}</b>. Your own picture!`},
+    ()=>gridRecall(it,"Round 3",(r,t)=>{
+      S.r3={r,t}; best("m1",r);
+      const pc=s=>Math.round(100*s.r/s.t);
+      app.innerHTML=`<h1>${r>S.r1.r?"Look what you just did":"Nice work"}</h1>
+      <div class="card"><div class="bars">
+        <div class="bar"><b>Round 1 — no trick</b><div class="track"><div class="fill" id="f1">${S.r1.r}/${S.r1.t}</div></div></div>
+        <div class="bar"><b>Round 2 — with help</b><div class="track"><div class="fill" id="f2">${S.r2.r}/${S.r2.t}</div></div></div>
+        <div class="bar"><b>Round 3 — on your own</b><div class="track"><div class="fill best" id="f3">${r}/${t}</div></div></div>
+      </div></div>
+      <div class="card" style="text-align:left"><p style="font-size:20px"><b>The trick is yours now. 🧠</b></p>
+      <p class="muted" style="font-size:16px">Two rules: join each thing to the next, and make it silly.
+      Try it tomorrow on something real — that's when you'll know it stuck.</p></div>
+      <button onclick="home()">Pick another trick</button>`;
+      setTimeout(()=>{document.getElementById("f1").style.width=Math.max(pc(S.r1),16)+"%";
+        document.getElementById("f2").style.width=Math.max(pc(S.r2),16)+"%";
+        document.getElementById("f3").style.width=Math.max(pc({r,t}),16)+"%";},250);
     }));
 }
 
-/* ---------- 3. teach the technique ---------- */
-function teach(){
-  app.innerHTML = `
-    <p class="muted">The trick</p>
+/* ================= MODE 2 — MEMORY PALACE ================= */
+function m2intro(){
+  used=[];S={};
+  app.innerHTML=`<h1>🏠 Memory Palace</h1>
+    <p class="muted">The oldest trick there is. Greek speakers used it 2,000 years ago.</p>
     <div class="card" style="text-align:left">
-      <p style="font-size:21px"><b>Don't remember a list. Make a silly film.</b></p>
-      <p class="muted" style="font-size:17px">Join each thing to the next one in a picture so
-      ridiculous you couldn't forget it if you tried.</p>
-      <div style="text-align:center;margin:20px 0 8px">
-        <p style="font-size:56px;margin:0">🐘 ➕ 🎸</p>
-        <p class="link" style="margin:8px auto">The <b>elephant</b> is playing the <b>guitar</b>
-        with its trunk. Badly. It's very loud.</p>
-        <p style="font-size:56px;margin:14px 0 0">🎸 ➕ 🍌</p>
-        <p class="link" style="margin:8px auto">The guitar strings are <b>bananas</b>. They snap
-        when he strums.</p>
-      </div>
-      <p class="muted" style="font-size:16px"><b>Silly is the point.</b> Boring pictures don't
-      stick. Weird ones do.</p>
+      <p style="font-size:20px"><b>Hide things around a room you know.</b></p>
+      <p class="muted" style="font-size:17px">You already know your own room perfectly. So put each
+      thing somewhere in it — then walk round and collect them.</p>
+      <div class="spots">${SPOTS.map(s=>`<div class="spot"><div class="se">${s.e}</div>
+        <div class="sn">${s.n}</div></div>`).join("")}</div>
+      <p class="muted" style="font-size:16px">This is <b>your</b> palace. Same six places every time.</p>
     </div>
-    <button onclick="round2()">Let me try it</button>`;
+    <button onclick="m2place()">Start hiding</button>
+    <button class="calm" onclick="home()" style="display:block;margin:8px auto 0">Back</button>`;
+}
+function m2place(){
+  const it=pick(6);
+  S.pairs=SPOTS.map((s,i)=>({spot:s,item:it[i]}));
+  let i=0;
+  (function step(){
+    if(i>=S.pairs.length){ m2walk(); return; }
+    const p=S.pairs[i];
+    app.innerHTML=`<p class="muted">Hiding — ${i+1} of 6</p>
+      <div class="stage"><p class="big">${p.item}</p><p class="word">${nm(p.item)}</p>
+      <p class="link">Put it on <b>${p.spot.n}</b> ${p.spot.e} — picture it there, huge and silly.</p>
+      <div class="pips">${S.pairs.map((_,k)=>`<div class="pip ${k<=i?'on':''}"></div>`).join("")}</div></div>
+      <div class="spots">${SPOTS.map((s,k)=>`<div class="spot ${k<=i?'placed':''}">
+        <div class="se">${s.e}</div><div class="sn">${s.n}</div>
+        <div class="put">${k<=i?S.pairs[k].item:"&nbsp;"}</div></div>`).join("")}</div>`;
+    i++; setTimeout(step,3600);
+  })();
+}
+function m2walk(){
+  const qs=S.pairs.map(p=>({
+    cue:p.spot.e, cueText:p.spot.n, ask:"What did you hide here?",
+    answer:p.item,
+    options:sh([{v:p.item,label:`${p.item} ${nm(p.item)}`}].concat(
+      sh(POOL.filter(e=>!S.pairs.some(x=>x.item===e))).slice(0,3)
+        .map(e=>({v:e,label:`${e} ${nm(e)}`}))))
+  }));
+  quiz(qs,"Walk your palace",(r,t)=>{
+    best("m2",r);
+    app.innerHTML=`<h1>${r===t?"Perfect walk! 🏆":"Nice walking"}</h1>
+      <div class="card"><p class="score">${r}<span style="font-size:23px;color:var(--muted)">/${t}</span></p>
+      <p class="muted">${r===t?"Every single one. That's the palace working."
+        :r>=t-1?"Almost the whole room. Make the missing one sillier next time."
+        :"Try making each picture bigger and weirder — small neat pictures slip away."}</p></div>
+      <div class="card" style="text-align:left"><p style="font-size:20px"><b>Why this one is special 🏠</b></p>
+      <p class="muted" style="font-size:16px">Things come back <b>in order</b>, because your room has
+      an order. Use the same six places every time and it gets stronger, not weaker.</p></div>
+      <button onclick="m2place()">Hide new things</button>
+      <button class="calm" onclick="home()" style="display:block;margin:8px auto 0">Pick another trick</button>`;
+  });
 }
 
-/* ---------- 4. guided round ---------- */
-function round2(){
-  const items = pick(8);
-  show(items, {label:"Round 2 — link each one to the last", linked:true, per:3400}, () =>
-    recall(items, "Round 2", (right,total) => {
-      scores.r2 = {right,total};
-      const up = right - scores.r1.right;
-      app.innerHTML = `
-        <p class="muted">Round 2</p>
-        <div class="card">
-          <p class="score">${right}<span style="font-size:24px;color:var(--muted)">/${total}</span></p>
-          <p style="font-size:22px;margin-top:6px">${
-            up > 0 ? `That's <b style="color:var(--good)">${up} more</b> than before! 🎉`
-                   : up === 0 ? `Same as last time — try making them sillier.`
-                   : `Hmm, tricky round. The pictures need to be weirder.`}</p>
-        </div>
-        <div class="card">
-          <h1 style="font-size:24px">Now the real test</h1>
-          <p class="muted">This time <b>you</b> make the pictures. No help. And it's ten things.</p>
-        </div>
-        <button onclick="round3()">I'm ready</button>`;
-    }));
-}
-
-/* ---------- 5. solo round ---------- */
-function round3(){
-  const items = pick(10);
-  show(items, {label:"Round 3 — your own silly film", selfLink:true, per:3400}, () =>
-    recall(items, "Round 3", (right,total) => {
-      scores.r3 = {right,total};
-      finish();
-    }));
-}
-
-/* ---------- 6. the payoff ---------- */
-function finish(){
-  const pct = s => Math.round(100 * s.right / s.total);
-  const beat = scores.r3.right > scores.r1.right;
-  app.innerHTML = `
-    <h1>${beat ? "Look what you just did" : "Nice work"}</h1>
-    <div class="card">
-      <div class="bars">
-        <div class="bar"><b>Round 1 — no trick</b><div class="track">
-          <div class="fill" id="f1">${scores.r1.right}/${scores.r1.total}</div></div></div>
-        <div class="bar"><b>Round 2 — trick with help</b><div class="track">
-          <div class="fill" id="f2">${scores.r2.right}/${scores.r2.total}</div></div></div>
-        <div class="bar"><b>Round 3 — trick on your own</b><div class="track">
-          <div class="fill best" id="f3">${scores.r3.right}/${scores.r3.total}</div></div></div>
-      </div>
-    </div>
+/* ================= MODE 3 — NAME GAME ================= */
+function m3intro(){
+  S={};
+  app.innerHTML=`<h1>🙂 Name Game</h1>
+    <p class="muted">The most useful memory trick of all.</p>
     <div class="card" style="text-align:left">
-      <p style="font-size:21px"><b>The trick is yours now. 🧠</b></p>
-      <p class="muted" style="font-size:17px">It works on shopping lists, spellings, times tables,
-      people's names — anything you need in an order.</p>
-      <p class="muted" style="font-size:17px"><b>Two rules:</b> join each thing to the next one,
-      and make the picture <b>silly</b>.</p>
-      <p class="muted" style="font-size:16px;margin-top:14px">Try it tomorrow on something real.
-      That's when you'll find out it actually stuck.</p>
+      <p style="font-size:20px"><b>Names vanish because we never really look.</b></p>
+      <p class="muted" style="font-size:17px">The trick: find something about the face that
+      <b>sounds like</b> the name — then glue them together in a picture.</p>
+      <div style="text-align:center;margin:16px 0 6px">
+        <p style="font-size:54px;margin:0">👩‍🦰</p>
+        <p class="word">Rosa</p>
+        <p class="link" style="margin:6px auto">Rosa has <b>rose</b>-red hair. 🌹</p>
+      </div>
     </div>
-    <button onclick="location.reload()">Play again</button>`;
-  setTimeout(()=>{
-    document.getElementById("f1").style.width = Math.max(pct(scores.r1),16)+"%";
-    document.getElementById("f2").style.width = Math.max(pct(scores.r2),16)+"%";
-    document.getElementById("f3").style.width = Math.max(pct(scores.r3),16)+"%";
-  }, 260);
+    <button onclick="m3meet()">Meet them</button>
+    <button class="calm" onclick="home()" style="display:block;margin:8px auto 0">Back</button>`;
 }
-splash();
+function m3meet(){
+  S.cast=sh(PEOPLE).slice(0,6); let i=0;
+  (function step(){
+    if(i>=S.cast.length){ m3quiz(); return; }
+    const p=S.cast[i];
+    app.innerHTML=`<p class="muted">Meeting people — ${i+1} of 6</p>
+      <div class="stage"><p class="big">${p.f}</p><p class="word">${p.n}</p>
+      <p class="link">${p.h}</p>
+      <div class="pips">${S.cast.map((_,k)=>`<div class="pip ${k<=i?'on':''}"></div>`).join("")}</div></div>`;
+    i++; setTimeout(step,3600);
+  })();
+}
+function m3quiz(){
+  const qs=sh(S.cast).map(p=>({
+    cue:p.f, cueText:"", ask:"Who's this?",
+    answer:p.n,
+    options:[{v:p.n,label:p.n}].concat(
+      sh(PEOPLE.filter(x=>x.n!==p.n)).slice(0,3).map(x=>({v:x.n,label:x.n})))
+  }));
+  quiz(qs,"Who's who",(r,t)=>{
+    best("m3",r);
+    app.innerHTML=`<h1>${r===t?"You knew everyone! 🎉":"Not bad at all"}</h1>
+      <div class="card"><p class="score">${r}<span style="font-size:23px;color:var(--muted)">/${t}</span></p>
+      <p class="muted">${r===t?"Six new people, all named. Most grown-ups can't do that."
+        :"The ones you missed — what did their face sound like?"}</p></div>
+      <div class="card" style="text-align:left"><p style="font-size:20px"><b>Use it for real 🙂</b></p>
+      <p class="muted" style="font-size:16px">Next time you meet someone new: <b>say their name back
+      to them</b>, then find one thing on their face that sounds like it. That's the whole trick.</p></div>
+      <button onclick="m3meet()">Meet six more</button>
+      <button class="calm" onclick="home()" style="display:block;margin:8px auto 0">Pick another trick</button>`;
+  });
+}
+home();
 </script>
 </body>
 </html>
