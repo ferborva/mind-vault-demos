@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Six Moves — the card game, on screen</title>
+<style>
+  :root{
+    --bg:#f7f5f1; --panel:#fffdfa; --ink:#1d1b18; --muted:#6b655c;
+    --line:#e2ddd4; --accent:#b4532a; --accent-soft:#f4e6df;
+    --good:#2f6b4a; --cut:#8a8378;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.55 ui-serif,Georgia,"Iowan Old Style",serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:28px 20px 80px}
+  h1{font-size:27px; line-height:1.15; margin:0 0 6px; letter-spacing:-.02em}
+  .sub{color:var(--muted); margin:0 0 22px; font-size:15px}
+  .progress{
+    font:600 13px/1.4 ui-sans-serif,system-ui,sans-serif; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--accent); margin:0 0 14px;
+  }
+  .moverow{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:10px; margin-bottom:18px;
+  }
+  .movecard{
+    font:inherit; text-align:left; cursor:default;
+    background:var(--panel); border:1.5px solid var(--accent); border-radius:8px;
+    padding:12px 14px; color:var(--ink); min-height:48px;
+  }
+  .movecard.pickable{cursor:pointer}
+  .movecard.pickable:hover{border-color:var(--ink)}
+  .movecard.sel{background:var(--accent-soft); box-shadow:0 0 0 2px var(--accent) inset}
+  .movename{display:block; font-size:16px; font-weight:700; margin-bottom:2px}
+  .movehint{display:block; font-size:13px; color:var(--muted); line-height:1.45}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:20px 22px; margin-bottom:14px;
+  }
+  .card.exp{border-left:3px solid var(--accent); background:var(--accent-soft)}
+  .card.talk{border:1.5px solid var(--good)}
+  .eyebrow{
+    font:600 11px/1.3 ui-sans-serif,system-ui,sans-serif; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--accent); margin-bottom:8px;
+  }
+  .sit-text{font-size:18px; line-height:1.5; margin:0}
+  .reframe{font-size:16px; line-height:1.55; margin:0 0 6px}
+  .movetag{
+    display:inline-block; font:600 12px/1 ui-sans-serif,system-ui,sans-serif;
+    letter-spacing:.06em; text-transform:uppercase; color:var(--accent);
+    border:1px solid var(--accent); border-radius:999px; padding:7px 12px; margin-top:10px;
+  }
+  .cardfoot{font-size:13px; color:var(--muted); margin-top:10px}
+  .bigbtn{
+    font:600 16px/1 ui-sans-serif,system-ui,sans-serif; cursor:pointer;
+    background:var(--accent); color:#fff; border:0; border-radius:9px;
+    padding:16px 20px; margin:6px 8px 6px 0; min-height:48px;
+  }
+  .bigbtn:disabled{background:#b9b2a6; cursor:default}
+  .ghostbtn{
+    font:600 15px/1 ui-sans-serif,system-ui,sans-serif; cursor:pointer;
+    background:transparent; color:var(--accent); border:1.5px solid var(--accent);
+    border-radius:9px; padding:15px 18px; margin:6px 8px 6px 0; min-height:48px;
+  }
+  .trackpick{display:grid; grid-template-columns:1fr; gap:12px; margin:18px 0}
+  @media (min-width:560px){ .trackpick{grid-template-columns:1fr 1fr} }
+  .trackbtn{
+    font:inherit; text-align:left; cursor:pointer;
+    background:var(--panel); border:1.5px solid var(--accent); border-radius:12px;
+    padding:18px 20px; color:var(--ink); min-height:48px;
+  }
+  .trackbtn strong{display:block; font-size:18px; margin-bottom:4px}
+  .trackbtn span{font-size:14px; color:var(--muted)}
+  .note{font-size:13.5px; color:var(--muted); margin-top:14px}
+  .compare{font-size:15px; margin:10px 0 0}
+  .compare strong{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Six Moves — the card game</h1>
+  <p class="sub">The same six reframing moves as the print-and-play cards, played on screen.
+  One file, no network, no install, no storage. Compare, never grade.</p>
+  <div id="app"></div>
+  <noscript><p class="note">This game needs JavaScript. Open it in a browser with scripts on.</p></noscript>
+</div>
+
+<script>
+/* ---------------------------------------------------------------
+   SIX MOVES — card game, on screen (Mind Vault, #28, IT2 web)
+   Same canonical data as reframe.html and cards.html, same laws:
+     1. Generate-then-compare. Never grade a free-response reframe.
+     2. Worked examples first, then fade the scaffolding.
+     3. The player must be able to NAME the move. (C1 / portable-skill test)
+   No score, no timer, no streaks. No network, no storage, no telemetry.
+   Data: MOVES and TRACKS below are stamped from data/moves.json.
+--------------------------------------------------------------- */
+const MOVES = {"out":{"name":"Zoom Out","hint":"The frame is too small. Something that matters was left outside it."},"in":{"name":"Zoom In","hint":"The frame is too big. A smaller, realer problem is hiding inside a vague one."},"seat":{"name":"Switch Seats","hint":"Look from someone else's position in the system."},"clock":{"name":"Change the Clock","hint":"Run it forward, or back. Timescale changes what a thing means."},"flip":{"name":"Flip the Constraint","hint":"The thing in your way may be the thing that makes it work."},"loop":{"name":"Find the Loop","hint":"It isn't an event, it's a cycle. Something is feeding itself."}};
+const TRACKS = {"younger":{"label":"Younger (roughly 9–13)","watch":[{"s":"Your football team keeps losing. Everyone says you need better players.","r":"Look at <em>when</em> you lose — it's always the last ten minutes. Nobody is worse than the other team; everyone is more tired than them. The problem was never inside the thing everyone was staring at.","m":"out"},{"s":"Your little brother keeps wrecking your Lego builds. You want a lock on your door.","r":"From where he's standing, he isn't attacking your stuff. He's trying to join in and doesn't know the way in. A lock stops the wrecking. It doesn't touch the reason.","m":"seat"}],"guided":[{"s":"You got a bad mark on a test and it feels like the whole year is ruined.","m":"clock","r":"Run the clock forward: in June this is one mark out of thirty. Run it backwards: what was last year's bad mark in? You genuinely can't remember. The <em>feeling</em> is real — the <em>size</em> of it is borrowed from today."},{"s":"You only get 20 minutes a day to practise piano. That's not enough to get good.","m":"flip","r":"Twenty minutes a day is <em>why</em> you'd get good. With an hour you'd play the bits you already like. With twenty minutes you have to pick the one bar you keep fumbling. The limit chose the right practice for you."}],"solo":[{"s":"Your friends always pick the one game you're worst at. You're starting to think you should just leave the group.","m":"in","r":"\"Should I leave my friends\" is an enormous question. Underneath it is a tiny one: <em>one</em> person picks the game, at <em>one</em> moment, once a day. Changing a game choice is a small, cheap thing to try. Changing a friendship is not. Always check whether the huge problem has a small one inside it."},{"s":"Homework takes you three hours. Everyone else says it takes them one.","m":"loop","r":"Three hours makes you tired. Tired makes tomorrow's homework slower, which makes you more tired. You never get an evening back to recover, so it never resets. That isn't a homework problem — it's a loop that feeds itself. And loops can be cut anywhere, not only at the place they started."}]},"older":{"label":"Older (14+ / adult)","watch":[{"s":"Your team's releases keep breaking. Everyone agrees the answer is more testing.","r":"Plot the bugs by day: they cluster on Fridays. This isn't a testing problem, it's a deadline-shape problem — you ship when people are tired. And more tests would have made it <em>harder</em> to see, because they'd quietly absorb the symptom while the cause kept running.","m":"out"},{"s":"A city has terrible traffic, so it widens the motorway.","r":"Wider road → faster commute → living further out becomes reasonable → more cars → traffic. It's called induced demand, and the fix fed the problem. Anything that makes a system's pain cheaper tends to buy you more of whatever was causing the pain.","m":"loop"}],"guided":[{"s":"Customers keep asking for a feature you're fairly sure is a bad idea.","m":"seat","r":"From their seat they are not requesting a feature. They're describing a workaround they already built for a problem you never saw. The feature is <em>their solution</em>, not their need — which is why it looks wrong from here. Ask what they did the last time it happened, not what they want."},{"s":"\"Our marketing isn't working.\"","m":"in","r":"\"Marketing\" isn't a thing that can fail; it's a word covering about nine things. Somewhere between a person first hearing the name and a person paying, there is exactly one step where most of them stop. That step is the actual problem, it is much smaller than \"marketing\", and you can usually find it in an afternoon."}],"solo":[{"s":"You never have time to learn the thing that would save you time.","m":"loop","r":"No time → don't learn the time-saver → still no time. It's self-sealing, and self-sealing loops never open by trying harder <em>inside</em> them — the loop is what's converting your effort into more loop. They open when someone spends, once, a resource they've decided they can't afford."},{"s":"A charity finds that donations drop every time it publishes how efficiently it spends money.","m":"seat","r":"From the donor's chair the message isn't \"we're careful with your money.\" It reads as \"we're fine.\" Efficiency sounds like <em>sufficiency</em>, and nobody rushes to rescue something that's coping. The numbers were true and the reader was wrong — which is a failure of seating, not of honesty."}]}};
+
+const PHASES = [
+  { key: 'watch', label: 'Watch', note: 'Read the situation, then the expert. Say the move out loud.' },
+  { key: 'guided', label: 'Your turn, with the name', note: 'Pick the move you would use, then see the expert.' },
+  { key: 'solo', label: 'On your own', note: 'Say your reframe out loud, then see the expert.' }
+];
+
+let state = { track: null, round: 0, picked: null, revealed: false };
+
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function roundsFor(trackKey) {
+  const t = TRACKS[trackKey];
+  const out = [];
+  for (const p of PHASES) {
+    t[p.key].forEach(function (d) {
+      out.push({ phase: p.key, phaseLabel: p.label, s: d.s, r: d.r, m: d.m });
+    });
+  }
+  return out;
+}
+
+function currentRound() {
+  return roundsFor(state.track)[state.round];
+}
+
+function moveRow() {
+  const keys = Object.keys(MOVES);
+  const round = state.track ? roundsFor(state.track)[state.round] : null;
+  const pickable = !!(round && round.phase === 'guided' && !state.revealed);
+  return '<div class="moverow">' + keys.map(function (k) {
+    const sel = state.picked === k ? ' sel' : '';
+    const pick = pickable ? ' pickable' : '';
+    const click = pickable ? ' onclick="pickMove(\'' + k + '\')"' : '';
+    return '<button type="button" class="movecard' + sel + pick + '"' + click + '>' +
+      '<span class="movename">' + esc(MOVES[k].name) + '</span>' +
+      '<span class="movehint">' + esc(MOVES[k].hint) + '</span></button>';
+  }).join('') + '</div>';
+}
+
+function expertCard(round) {
+  let html = '<div class="card exp"><div class="eyebrow">Expert card</div>' +
+    '<p class="reframe">' + round.r + '</p>' +
+    '<div class="movetag">Move: ' + esc(MOVES[round.m].name) + '</div>' +
+    '<p class="cardfoot">Not a right answer — just a different one.</p></div>';
+  if (round.phase === 'guided' && state.picked) {
+    const named = state.picked === round.m;
+    html += '<p class="compare">You named <strong>' + esc(MOVES[state.picked].name) + '</strong>. ' +
+      (named ? 'Same move the expert used.' : 'The expert used <strong>' + esc(MOVES[round.m].name) + '</strong> — a different tool for the same situation.') +
+      '</p>';
+  }
+  return html;
+}
+
+function render() {
+  const app = document.getElementById('app');
+  if (!state.track) {
+    app.innerHTML =
+      '<p class="progress">Pick a track</p>' +
+      '<div class="trackpick">' +
+      '<button type="button" class="trackbtn" onclick="pickTrack(\'younger\')"><strong>Younger</strong><span>Roughly 9–13. Six rounds, about fifteen minutes.</span></button>' +
+      '<button type="button" class="trackbtn" onclick="pickTrack(\'older\')"><strong>Older</strong><span>14+ / adult. Six rounds, about fifteen minutes.</span></button>' +
+      '</div>' +
+      '<p class="note">The six move cards are the tools. The game is learning their names. ' +
+      'Lay them out where everyone can see them — they stay on screen for the whole game.</p>';
+    return;
+  }
+  const rounds = roundsFor(state.track);
+  const round = rounds[state.round];
+  if (state.round >= rounds.length) {
+    app.innerHTML =
+      '<p class="progress">Table talk — at the end</p>' +
+      moveRow() +
+      '<div class="card talk"><div class="eyebrow">Table talk — at the end</div>' +
+      '<p><strong>1. What did you notice?</strong></p>' +
+      '<p><strong>2. Which bit was boring?</strong></p>' +
+      '<p class="cardfoot">A game nobody found boring usually means nobody finished it. ' +
+      'Capture what people say, word for word.</p></div>' +
+      '<button type="button" class="bigbtn" onclick="restart()">Play this track again</button>' +
+      '<button type="button" class="ghostbtn" onclick="switchTrack()">Switch track</button>';
+    return;
+  }
+  let html = '<p class="progress">Round ' + (state.round + 1) + ' of ' + rounds.length +
+    ' — ' + esc(round.phaseLabel) + ' · ' + esc(TRACKS[state.track].label) + '</p>';
+  html += moveRow();
+  html += '<div class="card"><div class="eyebrow">Situation</div><p class="sit-text">' + esc(round.s) + '</p></div>';
+  if (!state.revealed) {
+    if (round.phase === 'watch') {
+      html += '<p class="note">' + esc(PHASES[0].note) + '</p>';
+      html += '<button type="button" class="bigbtn" onclick="reveal()">Show the expert</button>';
+    } else if (round.phase === 'guided') {
+      html += '<p class="note">' + esc(PHASES[1].note) + '</p>';
+      html += '<button type="button" class="bigbtn" onclick="reveal()" ' +
+        (state.picked ? '' : 'disabled') + '>Show the expert</button>';
+    } else {
+      html += '<p class="note">' + esc(PHASES[2].note) + '</p>';
+      html += '<button type="button" class="bigbtn" onclick="reveal()">Show the expert</button>';
+    }
+  } else {
+    html += expertCard(round);
+    const last = state.round === rounds.length - 1;
+    html += '<button type="button" class="bigbtn" onclick="nextRound()">' +
+      (last ? 'Table talk' : 'Next round') + '</button>';
+  }
+  app.innerHTML = html;
+}
+
+function pickTrack(key) {
+  state = { track: key, round: 0, picked: null, revealed: false };
+  render();
+}
+
+function pickMove(key) {
+  if (!state.track || state.revealed) return;
+  if (currentRound().phase !== 'guided') return;
+  state.picked = key;
+  render();
+}
+
+function reveal() {
+  state.revealed = true;
+  render();
+}
+
+function nextRound() {
+  state.round += 1;
+  state.picked = null;
+  state.revealed = false;
+  render();
+}
+
+function restart() {
+  state = { track: state.track, round: 0, picked: null, revealed: false };
+  render();
+}
+
+function switchTrack() {
+  state = { track: null, round: 0, picked: null, revealed: false };
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
