@@ -85,12 +85,12 @@
     transform:translate(-2px,-2px) rotate(0deg) scale(1.03);
     box-shadow:7px 7px 0 var(--ink); outline:3px solid var(--ink); outline-offset:2px;
   }
-  .movecard.given{outline:3px dashed var(--ink); outline-offset:3px}
   .movename{display:block; font-size:17px; font-weight:900; text-transform:uppercase; letter-spacing:.02em; margin-bottom:3px}
   .movehint{display:block; font-size:13.5px; font-weight:600; line-height:1.4}
-  .givenbadge{
-    display:inline-block; font-size:11px; font-weight:900; text-transform:uppercase;
-    background:var(--ink); color:var(--yellow); padding:3px 8px; border-radius:999px; margin-bottom:6px;
+  .dealt{
+    font-size:17px; font-weight:800; margin:4px 0 14px; padding:14px 16px;
+    background:var(--yellow); border:3px solid var(--ink); border-radius:12px;
+    box-shadow:4px 4px 0 var(--ink);
   }
   .card{
     background:var(--white); border:3px solid var(--ink); border-radius:16px;
@@ -222,15 +222,11 @@ function moveRow() {
   const keys = Object.keys(MOVES);
   const round = state.track ? roundsFor(state.track)[state.round] : null;
   const pickable = !!(round && (round.phase === 'watch' || round.phase === 'solo') && !state.revealed);
-  const given = round && round.phase === 'guided' ? round.m : null;
   return '<div class="moverow">' + keys.map(function (k, i) {
     const sel = state.picked === k ? ' sel' : '';
     const pick = pickable ? ' pickable' : '';
-    const gv = given === k ? ' given' : '';
     const click = pickable ? ' onclick="pickMove(\'' + k + '\')"' : '';
-    const badge = given === k ? '<span class="givenbadge">Your move</span>' : '';
-    return '<button type="button" class="movecard c' + i + sel + pick + gv + '"' + click + '>' +
-      badge +
+    return '<button type="button" class="movecard c' + i + sel + pick + '"' + click + '>' +
       '<span class="movename">' + esc(MOVES[k].name) + '</span>' +
       '<span class="movehint">' + esc(MOVES[k].hint) + '</span></button>';
   }).join('') + '</div>';
@@ -304,6 +300,7 @@ function render() {
       html += '<button type="button" class="bigbtn" onclick="reveal()" ' +
         (state.picked ? '' : 'disabled') + '>Show the expert</button>';
     } else if (round.phase === 'guided') {
+      html += '<p class="dealt">Your move this round: <strong>' + esc(MOVES[round.m].name) + '</strong> — ' + esc(MOVES[round.m].hint) + '</p>';
       html += '<p class="prompt">' + esc(PHASES[1].note) + '</p>';
       html += '<button type="button" class="bigbtn" onclick="reveal()">Show the expert</button>';
     } else {
