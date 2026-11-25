@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MemOji - the emoji memory game</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#fff8e7;background-image:radial-gradient(#111 1.2px,transparent 1.2px);background-size:22px 22px;color:#111}
+.wrap{max-width:480px;margin:0 auto;padding:24px 16px 40px;text-align:center}
+h1{font-size:46px;margin:10px 0 4px;letter-spacing:-1px}
+h1 .m{color:#ff2e88}
+.sub{font-size:17px;margin:0 0 18px}
+.sticker{display:inline-block;background:#ffd400;border:3px solid #111;border-radius:999px;padding:4px 14px;font-weight:800;transform:rotate(-2deg);box-shadow:3px 3px 0 #111}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:420px;margin:0 auto}
+.card{aspect-ratio:1;min-height:72px;border:3px solid #111;border-radius:16px;font-size:46px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:4px 4px 0 #111;transition:transform .12s;color:#fff}
+.card:active{transform:scale(.94)}
+.card.up{background:#fff;color:#111}
+.card.matched{background:#7dff2e;color:#111;animation:pop .3s}
+.b0{background:#7b2eff}.b1{background:#ff2e88}.b2{background:#00b3ff}.b3{background:#ff7a00}.b4{background:#00c853}.b5{background:#e91e63}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.12) rotate(-3deg)}100%{transform:scale(1)}}
+.btn{display:inline-block;margin-top:20px;padding:14px 26px;font-size:18px;font-weight:800;border:3px solid #111;border-radius:999px;background:#ff2e88;color:#fff;box-shadow:4px 4px 0 #111;cursor:pointer}
+.btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #111}
+.muted{color:#555;font-size:15px;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="sticker">a memory game</span>
+  <h1>Mem<span class="m">O</span>ji</h1>
+  <p class="sub">Flip two cards. Find the matching pair.</p>
+  <div id="app"></div>
+  <p class="muted" id="stat"></p>
+  <div id="end"></div>
+</div>
+<script>
+var POOL=['\u{1F436}','\u{1F431}','\u{1F98A}','\u{1F981}','\u{1F438}','\u{1F435}','\u{1F984}','\u{1F433}','\u{1F355}','\u{1F369}','\u{1F353}','\u{1F680}','\u{1F388}','\u{26BD}','\u{1F3B8}','\u{1F308}','\u{1F366}','\u{1F98B}'];
+var deck=[], first=-1, lock=false, flips=0, found=0, cards=[];
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function newGame(){
+  var picks=shuffle(POOL.slice()).slice(0,6);
+  deck=shuffle(picks.concat(picks));
+  first=-1; lock=false; flips=0; found=0; cards=[];
+  var app=document.getElementById('app');
+  app.innerHTML='<div class="grid" id="grid"></div>';
+  var grid=document.getElementById('grid');
+  deck.forEach(function(e,i){
+    var b=document.createElement('button');
+    b.className='card down b'+(i%6);
+    b.textContent='?';
+    b.setAttribute('aria-label','card '+(i+1));
+    b.setAttribute('data-i',i);
+    b.addEventListener('click',function(){flip(i);});
+    grid.appendChild(b);
+    cards.push(b);
+  });
+  document.getElementById('end').innerHTML='';
+  stat();
+}
+function stat(){document.getElementById('stat').textContent='Pairs found: '+found+' of 6 - Flips: '+flips;}
+function flip(i){
+  if(lock) return;
+  var c=cards[i];
+  if(c.classList.contains('up')||c.classList.contains('matched')) return;
+  c.classList.remove('down'); c.classList.remove('b'+(i%6)); c.classList.add('up'); c.textContent=deck[i];
+  if(first===-1){first=i;return;}
+  flips++; stat();
+  lock=true;
+  var a=cards[first]; var b=c; var fi=first; var match=(deck[first]===deck[i]);
+  first=-1;
+  if(match){
+    setTimeout(function(){
+      a.classList.add('matched'); b.classList.add('matched');
+      found++; stat(); lock=false;
+      if(found===6) win();
+    },250);
+  } else {
+    setTimeout(function(){
+      a.classList.remove('up'); a.classList.add('down'); a.classList.add('b'+(fi%6)); a.textContent='?';
+      b.classList.remove('up'); b.classList.add('down'); b.classList.add('b'+(i%6)); b.textContent='?';
+      lock=false;
+    },900);
+  }
+}
+function win(){
+  document.getElementById('end').innerHTML='<p style="font-size:22px;font-weight:800;margin:18px 0 4px">All pairs found!</p><p class="muted" style="margin-top:0">You found all 6 pairs in '+flips+' flips.</p><button class="btn" onclick="newGame()">Play again?</button>';
+}
+newGame();
+</script>
+</body>
+</html>
