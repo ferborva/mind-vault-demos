@@ -72,7 +72,7 @@
   .spot .se{font-size:34px} .spot .sn{font-size:12.5px;color:var(--muted);font-weight:700;margin-top:3px}
   .spot.placed{border-style:solid;border-color:var(--p2)}
   .spot .put{font-size:26px;margin-top:4px}
-  /* progress curve */
+  /* progress curve (IT8) */
   .cv-card{padding:14px 12px 10px}
   .cv{display:block;width:100%;height:120px;overflow:visible}
   .cv-sm .cv{height:64px}
@@ -94,7 +94,7 @@
   /* screen-reader only: the chart said in sentences */
   .sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
     clip:rect(0 0 0 0);white-space:nowrap;border:0}
-  /* regularity grid */
+  /* regularity grid (IT9) */
   .wk-head{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:0 auto 5px;max-width:270px}
   .wk-head span{font-size:11px;font-weight:800;color:var(--muted);text-align:center}
   .grid-wk{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;max-width:270px;margin:0 auto}
@@ -123,7 +123,7 @@
   .spot .se .ic{width:34px;height:34px}
   .mode .ic-lg{width:40px;height:40px;display:block}
   .opt .ic{width:24px;height:24px;vertical-align:-.3em;margin-right:6px}
-  /* motion, focus, and respect for people who don't want either */
+  /* IT5 — motion, focus, and respect for people who don't want either */
   @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   @keyframes pop{0%{transform:scale(.82)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
   .card,.stage,.mode,.tip{animation:rise .34s cubic-bezier(.2,.8,.2,1) both}
@@ -139,6 +139,9 @@
       transition-duration:.01ms!important}
   }
   /* Number Lock */
+  .dots{display:flex;gap:7px;justify-content:center;margin:14px 0 4px}
+  .dot{width:12px;height:12px;border-radius:99px;background:var(--line)}
+  .dot.p{background:var(--good)} .dot.h{background:var(--hot)} .dot.m{background:var(--bad)}
   .digits{font:800 46px/1.1 ui-rounded,system-ui,sans-serif;letter-spacing:.14em;
     display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:6px 0}
   .digits .chunk{background:var(--panel2);border-radius:12px;padding:6px 12px}
@@ -171,14 +174,22 @@
    Each teaches a nameable method the player keeps; none of them
    drills raw recall, because drilling recall trains the drill.
 
-   What it deliberately does NOT do: no streaks, no timers, no loss
-   aversion, no daily-return pressure, no points to spend. Those make
-   an app people cannot put down, which is the opposite of a skill
-   they can take away from it. Everything here should still work the
-   day the app is deleted.
+   Octalysis profile (stated before building, per D18):
+     Mode 1 Silly Film   — CD2 accomplishment, CD3 creativity+feedback, CD7 curiosity
+     Mode 2 Memory Palace— CD4 OWNERSHIP (your own palace, remembered), CD3, CD2
+     Mode 3 Name Game    — CD5 SOCIAL relatedness (real people), CD2
+     Mode 4 Number Lock  — CD3 chunking + number-shape pegs, CD2
+     Home + Tips         — CD2 progress, CD4 collection
+   White Hat throughout. The only Black Hat drive used is CD7 ("want
+   to know the trick?"), deliberately and sparingly. No streaks, no
+   loss aversion, no daily-return pressure — those are the C1 risk flags.
 
-   No typing anywhere. Nothing leaves the browser.
-   --------------------------------------------------------------- */
+   Timing, the one carve-out (IT13, family decision, issue #42):
+   Number Lock shows how long a recall took and keeps a best time per
+   level. It is a stopwatch, never a countdown: nothing fails for being
+   slow, slowness is never scored, and the score stays accuracy alone.
+   No typing. No network. Nothing leaves the page.
+--------------------------------------------------------------- */
 const NAMES={"🐘":"elephant","🎸":"guitar","🍌":"banana","🚀":"rocket","🐸":"frog","🎩":"hat",
 "🍕":"pizza","🦖":"dinosaur","🚲":"bike","🌵":"cactus","🐙":"octopus","🎈":"balloon","🧦":"sock",
 "🍩":"doughnut","🦉":"owl","🥁":"drum","🚂":"train","🍉":"melon","🐧":"penguin","🧸":"teddy",
@@ -242,24 +253,28 @@ function best(k,v,total,chance){ P[k]=Math.max(P[k]||0,v);
   if(total) logRound(k,v,total,chance);
   save(P); }
 
-/* ---------- The record ----------
-   Best scores, levels and badges all answer "how good are you now" and none of
-   them answers "are you getting better", so every completed round is appended
-   here and every chart reads from this one list.
+/* ---------- The record (IT8) ----------
+   Nothing in the game had a timestamp before this: best scores, levels and
+   badges all answer "how good are you now" and none of them answers "are you
+   getting better". So every completed round is appended here, and every screen
+   that draws a curve reads from this one list.
 
    The awkward fact this has to survive: THE DIFFICULTY ENGINE MOVES THE GOAL.
-   Someone who improves gets promoted, and their raw score falls. Plotting the
+   A child who improves gets promoted, and their raw score falls. Plotting the
    raw score would show a FALLING line to a player who is genuinely improving,
-   which is worse than showing no line at all. So each entry also records what a
-   pure guesser would have got and how much looking time was allowed, and the
-   curve is drawn from those. */
+   which is worse than showing no line at all. So each entry also records the
+   number a pure guesser would have got and how much looking time was allowed,
+   and the curve is drawn from those, not from the raw score. */
 const HIST_MAX=400;
-/* ONE ROW PER SESSION, and it is the LAST round.
+/* ONE ROW PER SESSION, and it is the LAST round -- made explicit here because
+   until IT12 it was merely where best() happened to be called.
+
    A Silly Film session is three rounds: cold with no technique, then guided
-   with the links supplied, then your own. Only the third measures the thing
-   being taught. Logging round 1 would drag the curve down every session with a
-   score deliberately taken WITHOUT the method, and round 2 is the game's work,
-   not the player's. */
+   with the links supplied, then the player's own. Only the third measures the
+   thing being taught. Logging round 1 would drag the curve down every single
+   session with a score deliberately taken WITHOUT the method, and round 2 is
+   the game's work, not the player's. So a "go" in this record means a
+   completed run of a trick, which is also why the day chart reads naturally. */
 function logRound(mode,right,total,chance){
   P.hist=P.hist||[];
   P.hist.push({m:mode, r:right, t:total, l:lv(mode),
@@ -268,13 +283,16 @@ function logRound(mode,right,total,chance){
 }
 /* Expected hits from pure guessing.
 
-   Grid recall is scored against the tiles actually TAPPED, not against the
-   number hidden. Nobody is forced to pick exactly n, so charging the guess
-   floor on picks means tapping four you are sure of costs a floor of four --
-   careful play is rewarded and spraying the grid is not.
+   Grid recall is scored against the tiles the player ACTUALLY TAPPED, not
+   against the number of items hidden. IT2 deliberately stopped forcing players
+   to pick exactly n, precisely so that guess-filling could not inflate a score;
+   charging the chance floor on picks rather than on n is what makes the metric
+   agree with that decision. Tapping four you are sure of costs you a floor of
+   four guesses, not of ten -- so careful play is rewarded and spraying the grid
+   is not.
 
-   Multiple choice: every question is answered, so it is one in `opts` each
-   time. Keypad: 1 in 10^digits. Call it zero. */
+   Multiple choice: every question is answered, so it is one in `opts` each time.
+   Keypad: 1 in 10^digits. Call it zero. */
 function chanceGrid(picks,items,tiles){ return tiles? (picks*items)/tiles : 0; }
 function chanceQuiz(t,opts){ return opts? t/opts : 0; }
 
@@ -293,11 +311,14 @@ function power(h){
   return Math.max(0, (h.r-(h.c||0))) * exposureFactor(h.l||1);
 }
 
-/* ---------- Difficulty engine ----------
-   Levels scale items, exposure and distractors; picking is never forced, so
-   filling in guesses cannot inflate a score; and difficulty follows demonstrated
-   ability, stepping DOWN after repeated failure rather than grinding someone
-   down. A player who feels stupid leaves. */
+/* ---------- Difficulty engine (IT2) ----------
+   Synthetic-player testing showed two faults at the fixed setting:
+   a typical 9-year-old scored ~5.7/8 with NO technique (guessing floor,
+   because you had to pick exactly 8 from 24), and hit 8/8 with one (ceiling).
+   So: levels that scale items, exposure and distractors; picking is no longer
+   forced, so guess-filling stops inflating the floor; and difficulty follows
+   demonstrated ability -- stepping DOWN after repeated failure, because a
+   player who feels stupid leaves. */
 const LEVELS=[
   {n:6, ms:2600, tiles:18},
   {n:8, ms:2400, tiles:24},
@@ -341,10 +362,13 @@ function grade(mode,right,wrong,total){
 function pick(n){ const a=POOL.filter(e=>!used.includes(e)); const g=sh(a).slice(0,n); used=used.concat(g); return g; }
 
 
-/* ---------- Endgame ----------
-   Badges mark real feats rather than participation, and the Grand Tour only
-   opens once the first three tricks are at level 3 -- so a veteran has
-   something that did not exist on day one. */
+/* ---------- Endgame (IT4) ----------
+   The fourth phase had nothing in it, and Chou is explicit that a phase with
+   no live Core Drive is a phase people drop out of. Two things fill it:
+   achievement symbols that mark REAL feats (he warns that a badge for nothing
+   insults the player -- though he notes small feats genuinely count as feats
+   for children), and a Grand Tour that only opens once all three tricks are
+   at level 3, giving a veteran something that did not exist on day one. */
 const BADGES=[
  {id:'first', ic:'🎬', t:'First film',      d:'Finish Silly Film once'},
  {id:'walk',  ic:'🏠', t:'House walker',    d:'Walk your own palace'},
@@ -358,9 +382,9 @@ const BADGES=[
  {id:'kept',  ic:'🦉', t:'Still got it',   d:'Perfect recall a day later'},
  {id:'tour',  ic:'🎉', t:'Grand Tour',      d:'Finish the Grand Tour'}
 ];
-/* Badges store WHEN, not just whether. A timestamp is still truthy, so older
-   saves keep working -- they simply have no date, and the milestone list skips
-   them rather than inventing one. */
+/* Badges store WHEN, not just whether. A timestamp is still truthy, so saves
+   made before IT10 keep working -- they simply have no date, and the milestone
+   list skips them rather than inventing one. */
 function award(id){ P.badges=P.badges||{}; if(P.badges[id]) return false;
   P.badges[id]=Date.now(); save(P); return true; }
 function hasBadge(id){ return !!(P.badges&&P.badges[id]); }
@@ -380,30 +404,49 @@ function badges(){
 
 /* ================= MODE 4 — NUMBER LOCK =================
    Digits are the material this age meets most and holds worst.
-   Teaches chunking, then number-shape pegs. Round 3 lets the player
-   choose where to split -- no split is objectively best, so it is a
-   genuine meaningful choice rather than a quiz with a right answer.
-   No arithmetic is ever asked: this is memory for numbers, not numeracy. */
+   Teaches chunking, then number-shape pegs. The player applies the
+   trick themselves from the first number: the flash is plain, and how
+   they split it in their head is their call.
+   No arithmetic is ever asked: this is memory for numbers, not numeracy.
+
+   IT13 (issue #42, family test 25 Nov 2026): the old shape was three
+   numbers with the trick re-taught between them every single time, and
+   the family called it boring. The new shape is one run of ten numbers
+   at the level's length, the trick taught exactly once ever, and the
+   number flashing faster as the player nails them. Timing is a friendly
+   stat and a best time, never a countdown and never a fail state --
+   see the carve-out in the file header. */
+const M4_RUN=10;        // numbers per run, at the level's length (#42)
+const M4_MS_STEP=250;   // exposure shortens this much per perfect number
+const M4_MS_FLOOR=1500; // never shorter than this
+function m4best(L){ return (P.m4best&&P.m4best[L])||0; }
 function m4intro(){
   S={};
+  const L=lv('m4'), b=m4best(L);
   app.innerHTML=`<h1>🔒 Number Lock</h1>
     <p class="muted">Phone numbers, dates, PINs — the stuff that slides straight out.</p>
-    <div class="stage"><p class="big">${ic('🔒')}</p><p class="word">How many digits?</p>
-    <p class="muted" style="margin-top:8px">A number will flash up. Tap it back.</p></div>
-    <button onclick="m4r1()">Play</button>
+    <div class="stage"><p class="big">${ic('🔒')}</p><p class="word">Ten numbers, one after another</p>
+    <p class="muted" style="margin-top:8px">Nail one and the next one flashes faster.
+    ${b?`<br>Your quickest clean recall at level ${L}: <b>${b.toFixed(1)}s</b>`:''}</p></div>
+    <button onclick="m4start()">Play</button>
+    ${P.m4taught?`<button class="calm" onclick="m4teach()" style="display:block;margin:8px auto 0">See the trick again</button>`:''}
     <button class="calm" onclick="home()" style="display:block;margin:8px auto 0">Back</button>`;
 }
+function m4start(){
+  if(P.m4taught) return m4run();
+  m4teach();
+}
 function makeNum(n){ return Array.from({length:n},()=>Math.floor(Math.random()*10)); }
-function showNum(num,label,ms,chunks,cb){
-  const body = chunks
-    ? `<div class="digits">${chunks.map(c=>`<span class="chunk">${c.join('')}</span>`).join('')}</div>`
-    : `<div class="digits">${num.join('')}</div>`;
-  app.innerHTML=`<p class="muted">${label}</p><div class="stage">${body}
-    <p class="link">${chunks?"Three small things beat one long thing.":"Hold it however you can."}</p></div>`;
+function showNum(num,label,ms,cb){
+  app.innerHTML=`<p class="muted">${label}</p><div class="stage">
+    <div class="digits">${num.join('')}</div>
+    <p class="link">Hold it however you can.</p></div>`;
   setTimeout(cb,ms);
 }
-function keypad(num,label,cb){
+function keypad(num,label,cb,opts){
   const got=[];
+  const t0=Date.now();   /* recall time runs from the moment the number hides */
+  const nextLabel=(opts&&opts.next)||'Next';
   function draw(){
     app.innerHTML=`<p class="muted">${label}</p><h2>Tap it back</h2>
       <p class="entry">${got.join('')||'&nbsp;'}</p>
@@ -418,30 +461,22 @@ function keypad(num,label,cb){
     const ok=document.getElementById('ok');
     if(got.length) ok.onclick=()=>{
       let right=0; num.forEach((d,i)=>{ if(got[i]===d) right++; });
+      const secs=(Date.now()-t0)/1000;
       app.innerHTML=`<p class="muted">${label}</p>
         <div class="card"><p class="muted" style="font-size:15px">THE NUMBER</p>
           <div class="digits">${num.map((d,i)=>`<span class="chunk" style="border:2px solid ${got[i]===d?'var(--good)':'var(--bad)'}">${d}</span>`).join('')}</div>
           <p class="muted" style="font-size:15px;margin-top:10px">YOU TAPPED</p>
           <div class="digits">${num.map((d,i)=>`<span class="chunk">${got[i]!==undefined?got[i]:'·'}</span>`).join('')}</div>
-          <p class="score"><span class="cnum" data-to="${right}">0</span><span style="font-size:23px;color:var(--muted)">/${num.length}</span></p></div>
-        <button onclick="window.__n()">Next</button>`;
-      window.__n=()=>cb(right,num.length);
+          <p class="score"><span class="cnum" data-to="${right}">0</span><span style="font-size:23px;color:var(--muted)">/${num.length}</span></p>
+          <p class="muted" style="font-size:16px;margin-top:6px">Remembered in ${secs.toFixed(1)}s</p></div>
+        <button onclick="window.__n()">${nextLabel}</button>`;
+      window.__n=()=>cb(right,num.length,secs);
     };
   }
   draw();
 }
-function m4r1(){
-  const C=NUM_LEN[lv('m4')-1], num=makeNum(C);
-  showNum(num,`Level ${lv('m4')} · Round 1 — just remember it`,NUM_MS[lv('m4')-1],null,()=>
-    keypad(num,"Round 1",(r,t)=>{ S.r1={r,t};
-      app.innerHTML=`<p class="muted">Round 1</p><div class="card">
-        <p class="score"><span class="cnum" data-to="${r}">0</span><span style="font-size:23px;color:var(--muted)">/${t}</span></p>
-        <p class="muted">Long numbers slide out fast. There's a way round it.</p>
-        <h2 style="margin-top:16px">Want the trick?</h2></div>
-      <button onclick="m4teach()">Show me</button>`;
-    }));
-}
 function m4teach(){
+  P.m4taught=1; save(P);   /* the trick is taught once, ever (#42) */
   app.innerHTML=`<p class="muted">The trick</p>
     <div class="card" style="text-align:left">
       <p style="font-size:21px"><b>1. Break it up.</b></p>
@@ -453,80 +488,86 @@ function m4teach(){
         <span><b>${d}</b> — a ${SHAPES[d][1]}</span></div>`).join('')}</div>
       <p class="muted" style="font-size:16px;margin-top:12px">Then put them in a silly picture,
       just like the film trick.</p>
+      <p class="muted" style="font-size:16px;margin-top:12px"><b>You only need this once.</b>
+      After that the numbers are all yours.</p>
     </div>
-    <button onclick="m4r2()">Let me try</button>`;
+    <button onclick="m4run()">Let me try</button>`;
 }
-function chunkOf(num){ const out=[];for(let i=0;i<num.length;i+=(num.length>6?4:3)) out.push(num.slice(i,i+(num.length>6?4:3)));return out; }
-function m4r2(){
-  const C=NUM_LEN[lv('m4')-1], num=makeNum(C);
-  showNum(num,`Level ${lv('m4')} · Round 2 — in chunks`,NUM_MS[lv('m4')-1]+800,chunkOf(num),()=>
-    keypad(num,"Round 2",(r,t)=>{ S.r2={r,t}; const up=r-S.r1.r;
-      app.innerHTML=`<p class="muted">Round 2</p><div class="card">
-        <p class="score"><span class="cnum" data-to="${r}">0</span><span style="font-size:23px;color:var(--muted)">/${t}</span></p>
-        <p style="font-size:21px;margin-top:4px">${up>0?`<b style="color:var(--good)">${up} more</b> than before! 🎉`
-          :up===0?`Same as last time — try smaller chunks.`:`Tricky one. Chunk it differently.`}</p></div>
-        <div class="card"><h2>Now you choose</h2>
-        <p class="muted">This time <b>you</b> decide where to split it. There's no right answer —
-        pick the shape that suits you.</p></div>
-      <button onclick="m4r3()">I'm ready</button>`;
-    }));
+/* One run: ten numbers at the level's length, back to back. The exposure
+   shortens by a step after every clean recall and eases back to the base
+   the moment one is missed -- difficulty follows demonstrated ability
+   inside the run, and a miss never punishes, it just slows the flash. */
+function m4run(){
+  const L=lv('m4'), C=NUM_LEN[L-1], base=NUM_MS[L-1];
+  S.m4={i:0, digits:0, perfect:0, streak:0, best:0, minMs:base, dots:[], last:null};
+  (function next(){
+    const R=S.m4;
+    if(R.i>=M4_RUN) return m4summary();
+    const num=makeNum(C);
+    const ms=Math.max(M4_MS_FLOOR, base-M4_MS_STEP*R.streak);
+    R.minMs=Math.min(R.minMs,ms);
+    showNum(num,`Level ${L} · Number ${R.i+1} of ${M4_RUN}`,ms,()=>
+      keypad(num,`Level ${L} · Number ${R.i+1} of ${M4_RUN}`,(r,t,secs)=>{
+        R.i++; R.digits+=r; R.last=num;
+        const clean=r===t;
+        if(clean){ R.perfect++; R.streak++; if(!R.best||secs<R.best) R.best=secs; }
+        else R.streak=0;
+        R.dots.push(clean?'p':(r>0?'h':'m'));
+        next();
+      },{next: R.i+1>=M4_RUN ? 'See how you did' : 'Next number'}));
+  })();
 }
-/* Plant Picker: where to split is preference, not correctness. */
-function m4r3(){
-  const C=NUM_LEN[lv('m4')-1], num=makeNum(C);
-  const cuts=new Set();
-  function draw(){
-    const chunks=[];let last=0;
-    for(let i=1;i<num.length;i++) if(cuts.has(i)){chunks.push(num.slice(last,i));last=i;}
-    chunks.push(num.slice(last));
-    app.innerHTML=`<p class="muted">Level ${lv('m4')} · Round 3 — your own chunks</p>
-      <div class="stage"><div class="digits">${chunks.map(c=>`<span class="chunk">${c.join('')}</span>`).join('')}</div>
-        <p class="link">Tap between digits to split. <b>Your call.</b></p></div>
-      <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-top:10px">
-        ${num.map((d,i)=>`<span style="font:800 26px/1 ui-rounded,system-ui;padding:6px 2px">${d}</span>${
-          i<num.length-1?`<button class="calm" data-c="${i+1}" aria-label="split here"
-            style="padding:6px 9px;font-size:15px;margin:0;${cuts.has(i+1)?'background:var(--hot);color:var(--hot-ink)':''}">|</button>`:''}`).join('')}
-      </div>
-      <button onclick="window.__go()">Got it — hide the number</button>`;
-    document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{
-      const i=+b.dataset.c; cuts.has(i)?cuts.delete(i):cuts.add(i); draw();});
-    window.__go=()=>keypad(num,"Round 3",(r,t)=>{
-      S.r3={r,t}; best('m4',r,t,0); const mv=grade('m4',r,t-r,t); vaultAdd('m4',num);
-      award('lock'); if(r===t)award('perfect'); const mastery=checkMastery();
-      const pc=x=>Math.round(100*x.r/x.t);
-      app.innerHTML=`<h1>${r>S.r1.r?"Look at that":"Nice work"}</h1>
-        <div class="card"><div class="bars">
-          <div class="bar"><b>Round 1 — no trick</b><div class="track"><div class="fill" id="f1">${S.r1.r}/${S.r1.t}</div></div></div>
-          <div class="bar"><b>Round 2 — our chunks</b><div class="track"><div class="fill" id="f2">${S.r2.r}/${S.r2.t}</div></div></div>
-          <div class="bar"><b>Round 3 — your chunks</b><div class="track"><div class="fill best" id="f3">${r}/${t}</div></div></div>
-        </div></div>
-        ${mv===1?`<div class="card" style="border:2px solid var(--good)"><p style="margin:0;font-size:20px">
-          <b style="color:var(--good)">Level ${lv('m4')} unlocked! 🎉</b> Longer numbers next.</p></div>`
-        :mv===-1?`<div class="card"><p class="muted" style="margin:0">Back a level — shorter numbers next time.</p></div>`:``}
-        ${mastery?`<div class="card" style="border:2px solid var(--good)"><p style="margin:0;font-size:19px">${ic('🧠')} <b style="color:var(--good)">Badge: All three tricks</b></p></div>`:``}
-        <div class="card" style="text-align:left"><p style="font-size:20px"><b>Yours now. 🔒</b></p>
-        <p class="muted" style="font-size:16px">Break it up, then picture it. Works on phone numbers,
-        dates, door codes — anything with digits.</p></div>
-        <button onclick="home()">Pick another trick</button>
-        ${progressLink()}`;
-      setTimeout(()=>{document.getElementById('f1').style.width=Math.max(pc(S.r1),16)+'%';
-        document.getElementById('f2').style.width=Math.max(pc(S.r2),16)+'%';
-        document.getElementById('f3').style.width=Math.max(pc({r,t}),16)+'%';},250);
-    });
+function m4summary(){
+  const R=S.m4, L=lv('m4'), C=NUM_LEN[L-1], total=M4_RUN*C;
+  /* One row per session, at the level it was played at (IT12): the curve
+     keeps counting digits, the same unit it always did for this mode. */
+  best('m4',R.digits,total,0);
+  /* Promotion counts clean numbers, not digits: grade() needs a near-perfect
+     run to promote (9 of 10) and two weak runs to demote (fewer than 4 clean),
+     which is the same strictness it always had on a single number. */
+  const mv=grade('m4',R.perfect,M4_RUN-R.perfect,M4_RUN);
+  vaultAdd('m4',R.last);
+  award('lock'); if(R.perfect===M4_RUN) award('perfect');
+  /* Best time: only a clean recall counts, and only against its own level --
+     a 12-digit number is never timed against a 4-digit one. */
+  let newBest=false;
+  if(R.best){
+    P.m4best=P.m4best||{};
+    if(!P.m4best[L]||R.best<P.m4best[L]){ P.m4best[L]=Math.round(R.best*10)/10; newBest=true; save(P); }
   }
-  draw();
+  const pc=Math.round(100*R.digits/total);
+  const dots=R.dots.map(d=>`<span class="dot ${d}"></span>`).join('');
+  app.innerHTML=`<h1>${R.perfect===M4_RUN?"Every single one":"Ten numbers done"}</h1>
+    <div class="card">
+      <p class="score"><span class="cnum" data-to="${R.digits}">0</span><span style="font-size:23px;color:var(--muted)">/${total} digits</span></p>
+      <p class="muted">${R.perfect} of ${M4_RUN} nailed clean${R.perfect<M4_RUN?` · ${pc}% of digits right`:''}</p>
+      <div class="dots">${dots}</div>
+      <p class="muted" style="font-size:15px">Each dot is one number — green clean, amber some right, red none.</p>
+      ${R.best?`<p style="font-size:18px;margin-top:10px">Quickest clean recall: <b>${R.best.toFixed(1)}s</b>${newBest?` — <b style="color:var(--good)">new best at level ${L}!</b>`:` (best at level ${L}: ${m4best(L).toFixed(1)}s)`}</p>`:''}
+      <p class="muted" style="font-size:15px">Quickest flash: ${(R.minMs/1000).toFixed(1)}s — it speeds up as you nail them.</p>
+    </div>
+    ${mv===1?`<div class="card" style="border:2px solid var(--good)"><p style="margin:0;font-size:20px">
+      <b style="color:var(--good)">Level ${lv('m4')} unlocked! 🎉</b> Longer numbers next.</p></div>`
+    :mv===-1?`<div class="card"><p class="muted" style="margin:0">Back a level — shorter numbers next time.</p></div>`:``}
+    <div class="card" style="text-align:left"><p style="font-size:20px"><b>Yours now. 🔒</b></p>
+    <p class="muted" style="font-size:16px">Break it up, then picture it. Works on phone numbers,
+    dates, door codes — anything with digits.</p></div>
+    <button onclick="m4run()">Go again</button>
+    <button class="calm" onclick="home()" style="display:block;margin:8px auto 0">Pick another trick</button>
+    ${progressLink()}`;
 }
 
-/* ---------- Spaced recall ----------
-   The testing effect is the most replicated finding in memory research, and
-   every other screen here tests you seconds after learning, which measures the
-   wrong thing. Items go into a vault with a timestamp and come back after a
-   real interval.
+/* ---------- Spaced recall (IT7) ----------
+   The testing effect is the most replicated finding in memory research and no
+   mode used it: everything was tested seconds after learning, which measures
+   the wrong thing. Items now go into a vault with a timestamp and come back
+   after a real interval.
 
-   It is an OFFER on the home screen, never a demand. There is no streak to
-   break, no penalty for being away, and being absent for a month costs
-   nothing. An appointment mechanic that punished absence would be a different
-   game, and not one worth building for a child. */
+   Deliberately White Hat. It is an OFFER on the home screen, never a demand;
+   there is no streak to break, no penalty for being away, and being absent for
+   a month costs nothing. Per D18 the criterion is the player's sense of
+   control -- an appointment mechanic that punishes absence would be CD6/CD8
+   and exactly the thing we ruled out. */
 const KIND={m1:['Things from your film','the things in your film'],
             m2:['Things you hid','the things you hid around your room'],
             m3:['People you met','the people you met'],
@@ -536,8 +577,10 @@ const RECALL_AFTER = 20*60*60*1000;          // ~a day later, not a nagging loop
 /* One vault, three kinds of material -- because a retention offer that covered
    only two of the four games would quietly teach that the other two don't stick. */
 function vaultAdd(mode,payload){
-  /* `l` is the level the material was learned at, so the day-later check is
-     sized from it and gets harder exactly as the player does. */
+  /* `l` is the level the material was learned at. The day-later check is sized
+     from it, so the retention screen gets harder exactly as the player does --
+     a synthetic run with a fixed 3x decoy field ceilinged a strong player at
+     8/8 every time, which is the "too easy to be interesting" failure. */
   const e={m:mode,ts:Date.now(),l:lv(mode)};
   if(mode==='m3'){ if(!payload||!payload.length) return; e.k='faces'; e.cast=payload.slice(0,8); }
   else if(mode==='m4'){ if(!payload||!payload.length) return; e.k='num'; e.num=payload.slice(0,12); }
@@ -604,31 +647,34 @@ function spacedRun(){
   const spread=3+Math.min(2,Math.floor((L-1)/2));
   gridRecall(v.items,"Still got it?",done,Math.min(36,v.items.length*spread),L>=ORDERED_FROM);
 }
-/* ---------- The curve ----------
-   Hand-rolled inline SVG, no chart library: a 40KB dependency to draw twenty
-   points would undo the whole performance budget.
+/* ---------- The curve (IT8) ----------
+   Hand-rolled inline SVG. No chart library: the CSP allowlist would block most
+   of them, and a 40KB dependency to draw twenty points would undo the entire
+   performance budget this prototype has held across seven iterations.
 
    TWO SERIES, and the pairing is the honest part:
-     - a DOT per day, which can and does go down;
+     - a DOT per attempt, which can and does go down;
      - a BEST-EVER line, which is monotone by construction.
-   The line gives the upward shape that makes progress legible; the dots keep it
-   truthful, because a flat run of dots under a flat line is visibly a plateau.
-   A chart that only ever rises is flattery, and children detect flattery faster
-   than adults do. */
+   The line gives the player the upward shape that makes progress legible; the
+   dots keep it truthful, because a flat stretch of dots under a flat line is
+   visibly a plateau. A chart with only the rising line would be flattery, and
+   children detect flattery faster than adults do. */
 const MODE_NAME={m1:'Silly Film',m2:'Memory Palace',m3:'Name Game',m4:'Number Lock'};
 const MODE_IC={m1:'🎬',m2:'🏠',m3:'🙂',m4:'🔒'};
 function hist(mode){ return (P.hist||[]).filter(h=>!mode||h.m===mode); }
 const dayKey=ts=>{ const d=new Date(ts); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); };
 
-/* The headline chart is ONE DOT PER DAY, which is a correction rather than a
-   simplification. Plotting every attempt on a single axis silently compares the
-   modes against each other: a Name Game round is worth fewer points than a
-   level-3 Silly Film round, so a session spent on the cheaper trick drew a
-   cliff that looked like the player falling apart.
+/* The headline chart is ONE DOT PER DAY, not one per attempt, and that is a
+   correction rather than a simplification. Plotting every attempt on a single
+   axis silently compares modes against each other: a Name Game round is worth
+   fewer points than a level-3 Silly Film round, so a session spent on the
+   cheaper trick drew a cliff that looked like the player falling apart. It was
+   caught by looking at a rendered chart -- every functional assertion passed
+   while the picture told a lie.
 
    The day's BEST round is a fair summary of a day: it does not reward grinding
-   one trick twenty times, and a weak day still shows as a low dot. Per-mode
-   charts stay per-attempt, where the comparison is valid. */
+   the same trick twenty times, and a genuinely weak day still shows as a low
+   dot. Per-mode charts stay per-attempt, where the comparison is valid. */
 function byDay(rows){
   const m=new Map();
   rows.forEach(h=>{ const k=dayKey(h.ts), v=power(h);
@@ -658,25 +704,32 @@ function curveSVG(rows,W,H,pre,marks){
     <g class="cv-d">${dots}</g></svg>`;
 }
 
-/* ---------- Regularity ----------
-   This states what happened and asks for nothing:
+/* ---------- Regularity (IT9) ----------
+   The CEO asked for "a sense of usage regularity". That request is ONE DESIGN
+   DECISION away from a streak, and a streak is CD6 + CD8 -- the profile D18
+   rules out, because engagement built on it stops the moment the app stops.
+
+   So this screen states what happened and asks for nothing:
      - no current-streak counter, and no "longest run" record either. A record
-       you could beat is still a chain you can feel breaking.
+       you could beat is still a chain you can feel breaking, and Chou's actual
+       criterion is whether the player keeps their sense of being in control.
      - a gap is drawn in exactly the same grey as a day that has not happened
        yet. Absence is not a colour.
      - the headline is a TOTAL, and a total only ever grows. Being away for a
        month subtracts nothing, because nothing was ever owed.
 
-   What is left to motivate with, once threat is off the table, is evidence: a
-   picture of a habit that already exists. */
+   What is left to motivate with, once threat is off the table, is EVIDENCE:
+   a picture of a habit that already exists. "You have done this on 14 days" is
+   a fact about the player, and facts about yourself are CD4 -- ownership, not
+   obligation. */
 const GRID_MAX_WEEKS=8;
 function mondayOf(d){ const x=new Date(d); x.setHours(0,0,0,0);
   x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; }
 /* The grid spans only the weeks the player actually has history in, never a
    fixed window. A fixed 8-week board shown to someone with one week of history
    is six rows of empty grey -- and empty space shames just as effectively as
-   red does, which would undo the point of the copy underneath it. Growing the
-   board instead means the picture gets bigger as the habit does. */
+   red does, which would have undone the entire point of the copy underneath it.
+   Growing the board instead means the picture gets bigger as the habit does. */
 function gridWeeks(days){
   if(!days.length) return 1;
   const first=mondayOf(days[0].ts), now=mondayOf(Date.now());
@@ -713,7 +766,7 @@ function regularity(days){
       <b>Gaps are fine</b> — nothing here counts down.</p>
     </div>`;
 }
-/* ---------- Milestones and the text alternative ----------
+/* ---------- Milestones and the text alternative (IT10) ----------
    A line with no events on it is a shape; a line with events on it is a story.
    Level-ups need no new storage at all -- a level change between two
    consecutive history entries IS a level-up, so this works retroactively for
@@ -722,7 +775,7 @@ function regularity(days){
    The list underneath is not a nicety. A chart is INVISIBLE to a screen reader:
    an <svg> full of <path> data says nothing whatever about progress. So the
    same information exists as sentences -- and writing it out turned out to be
-   the better interface for everyone. */
+   the better interface for everyone, which is the usual way with this. */
 function milestones(){
   const h=hist(), out=[];
   const seen={};
@@ -766,14 +819,16 @@ function progressSummary(days,all,first,bestNow,ms){
     + (ms.length? `${ms.length} milestone${ms.length===1?'':'s'} reached, most recently `
         + `${ms[ms.length-1].t} ${dstr(ms[ms.length-1].ts)}.` : `No milestones yet.`);
 }
-/* ---------- The flat-line note ----------
-   An honest chart has a cost: someone whose ability has genuinely stopped
-   growing sees a genuinely flat line, and that is the moment a child decides
-   they are stuck.
+/* ---------- The flat-line note (IT11) ----------
+   An honest chart has a cost, and the synthetic run made it concrete: a player
+   whose capacity has genuinely stopped growing sees a genuinely flat line
+   (+0.012/day against an improver's +0.265). That is correct, and it is also
+   the moment a child decides they are stuck.
 
    The wrong fix is to bend the curve. The right one is to say what a flat line
    MEANS -- it almost always means the level has caught up with them, which is
-   information, not a verdict -- and to name one concrete thing to try. */
+   information, not a verdict -- and to name one concrete thing to try. No
+   guilt, no "don't give up", no exhortation. */
 function flatNote(days){
   if(days.length<5) return '';
   const recent=days.slice(-5).map(d=>d.v);
@@ -837,6 +892,11 @@ function playedBefore(){
   return (P.hist||[]).length>0 || !!P.done ||
     ['m1','m2','m3','m4'].some(m=>P[m]!==undefined);
 }
+/* Fewer than two days of history is not a curve, and drawing one from a single
+   point would be a lie. But "come back later" was not an answer either: it told
+   a player who had just finished a session that there was nothing to see. So
+   this shows what is actually known -- levels reached, badges earned -- and
+   says plainly where the line will start. */
 /* Offered at the end of a session, where the motivation to look is highest --
    the score is still on screen and the round that just moved the line is the
    one they just played. Only once there is a second point to draw. */
@@ -846,11 +906,6 @@ function progressLink(){
         📈 See how you're doing</button>`
     : '';
 }
-/* Fewer than two days of history is not a curve, and drawing one from a single
-   point would be a lie. But "come back later" was not an answer either: it told
-   someone who had just finished a session that there was nothing to see. So
-   this shows what IS known -- levels reached, badges earned -- and says plainly
-   where the line will start. */
 function progressEmpty(n){
   const played=['m1','m2','m3','m4'].filter(m=>P[m]!==undefined);
   app.innerHTML=`<h1>How you're doing</h1>
@@ -1162,8 +1217,8 @@ function m1r3(){
   step();
 }
 
-/* Her creation is shown back to her. The film she built is the material, and
-     the score is feedback on HER film, not on ours. */
+/* CD3 proper: her creation is shown back to her. The film she built is the
+   result of her choices, replayed before the score. */
 function m1finish(it){
   const pc=s2=>Math.round(100*s2.r/s2.t);
   const r=S.r3.r,t=S.r3.t;
@@ -1196,7 +1251,7 @@ function m1finish(it){
     document.getElementById("f3").style.width=Math.max(pc({r,t}),16)+"%";},250);
 }
 
-/* ================= MODE 2 — MEMORY PALACE ================= */
+/* ================= MODE 2 — MEMORY PALACE (CD4 ownership) ================= */
 function m2intro(){
   used=[];S={};
   const need=PALACE_SPOTS[lv('m2')-1];
@@ -1222,8 +1277,8 @@ function m2intro(){
     <button class="calm" onclick="home()" style="display:block;margin:8px auto 0">Back</button>`;
 }
 
-/* She chooses and orders the six places. Saved, and reused with any items
-   forever -- so the route regenerates value without us shipping another room. */
+/* CD3 + CD4: she chooses and orders the six places. Saved. Reused with any items,
+   which is what makes the mechanic evergreen — no new content needed from us. */
 function m2build(){
   const need=PALACE_SPOTS[lv('m2')-1];
   const chosen=(P.palace||[]).slice(0,need);
@@ -1300,7 +1355,7 @@ function m2walk(){
   });
 }
 
-/* ================= MODE 3 — NAME GAME ================= */
+/* ================= MODE 3 — NAME GAME (CD5 social) ================= */
 function m3intro(){
   S={};
   app.innerHTML=`<h1>🙂 Name Game</h1>
