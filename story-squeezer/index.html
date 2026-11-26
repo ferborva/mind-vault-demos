@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Story Squeezer - practise spotting what matters</title>
+<style>
+  :root{
+    --bg:#fdf6e3; --panel:#fffdf7; --ink:#2b2118; --muted:#6f6152;
+    --line:#e5dcc4; --accent:#b4532a; --accent-soft:#f4e6df;
+    --good:#2f6b4a; --good-soft:#e2f0e6; --gold:#8a6d1b;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Georgia,'Times New Roman',serif;font-size:18px;line-height:1.5}
+  #app{max-width:640px;margin:0 auto;padding:16px 16px 48px}
+  h1{font-size:34px;line-height:1.15;margin:8px 0 4px}
+  h2{font-size:24px;margin:6px 0 10px}
+  h3{font-size:19px;margin:18px 0 6px}
+  p{margin:8px 0}
+  .tag{display:inline-block;background:var(--accent-soft);color:var(--accent);
+    border:1px solid var(--accent);border-radius:999px;padding:4px 12px;
+    font-size:14px;font-family:system-ui,sans-serif}
+  .muted{color:var(--muted)}
+  .small{font-size:15px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;margin:12px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .chunk{background:#f7efdc;border-left:4px solid var(--accent);border-radius:8px;
+    padding:12px 14px;margin:10px 0}
+  .storytext{background:#f7efdc;border-radius:8px;padding:12px 14px;margin:10px 0}
+  button{font-family:system-ui,sans-serif;font-size:17px;min-height:48px;
+    border-radius:12px;border:2px solid var(--accent);background:var(--panel);
+    color:var(--ink);padding:10px 16px;margin:6px 6px 6px 0;cursor:pointer;
+    text-align:left;line-height:1.35}
+  button:hover{background:var(--accent-soft)}
+  button.primary{background:var(--accent);color:#fff;font-weight:700;text-align:center}
+  button.primary:disabled{background:#cbb9a8;border-color:#cbb9a8;cursor:default}
+  button:disabled{opacity:.55;cursor:default}
+  button.picked{background:var(--accent-soft);border-color:var(--accent);
+    box-shadow:0 0 0 2px var(--accent) inset}
+  button.correct{background:var(--good-soft);border-color:var(--good)}
+  button.wrongpick{background:#f7e8e2;border-color:#a4553a}
+  .opt{display:block;width:100%}
+  .tray{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .tile{min-height:48px;min-width:64px;padding:10px 14px;border-radius:999px;
+    border:2px solid var(--accent);background:var(--panel);font-size:17px;
+    font-family:system-ui,sans-serif;cursor:pointer}
+  .tile.picked{background:var(--accent);color:#fff;font-weight:700}
+  .tile.keep{background:var(--good-soft);border-color:var(--good);font-weight:700}
+  .tile.miss{opacity:.55}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:999px;
+    padding:4px 12px;font-size:14px;font-family:system-ui,sans-serif;background:var(--panel)}
+  .pill.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .pill.locked{opacity:.55}
+  .score{font-size:20px;font-weight:700}
+  .why{background:var(--good-soft);border-radius:8px;padding:10px 14px;margin:10px 0}
+  .gentle{background:#f7e8e2;border-radius:8px;padding:10px 14px;margin:10px 0}
+  .banner{background:var(--accent-soft);border:1px dashed var(--accent);
+    border-radius:var(--radius);padding:14px;margin:12px 0;text-align:center}
+  .progress{font-family:system-ui,sans-serif;font-size:14px;color:var(--muted)}
+  details{margin:10px 0}
+  summary{cursor:pointer;font-family:system-ui,sans-serif;font-size:16px;
+    min-height:44px;line-height:44px}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+/* Story Squeezer - Week 1 game 1, Mind Vault. Reading Efficiency.
+   Practise spotting what matters in a story. Accuracy only, never speed.
+   No timers, no streaks, no coins, no shop, no daily bonus. */
+const TEXTS = [
+ {
+  "chunks": [
+   "Wombats are the only animal that makes cube-shaped poo. They do it to mark territory without it rolling away.",
+   "Their intestines squeeze the poo into cubes as it dries.",
+   "Scientists found the stretchy parts of the gut shape the corners."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "Wombats make cube-shaped poo to mark territory"
+   },
+   {
+    "kind": "detail",
+    "text": "Scientists studied wombat intestines"
+   },
+   {
+    "kind": "narrow",
+    "text": "Poo dries as it moves through the gut"
+   },
+   {
+    "kind": "broad",
+    "text": "Wombats live in Australia"
+   }
+  ],
+  "id": "L1-animals-wombat",
+  "keepers": [
+   "wombats",
+   "cube",
+   "territory",
+   "intestines",
+   "squeeze"
+  ],
+  "level": 1,
+  "predictions": [
+   {
+    "correct": true,
+    "text": "To mark their territory"
+   },
+   {
+    "correct": false,
+    "text": "To help them digest tough grass"
+   },
+   {
+    "correct": false,
+    "text": "To keep cool in the Australian sun"
+   }
+  ],
+  "question": "Why do wombats make cube-shaped poo?",
+  "title": "The cube-poo wombat",
+  "topic": "Animals",
+  "tray": [
+   "wombats",
+   "cube",
+   "territory",
+   "intestines",
+   "squeeze",
+   "only",
+   "scientists",
+   "rolling",
+   "corners",
+   "dries"
+  ],
+  "why": "The whole text is about why the poo is cube-shaped - to mark territory. The scientists are just one detail."
+ },
+ {
+  "chunks": [
+   "The Moon always shows us the same face. We never see its far side from Earth, no matter when we look up at night.",
+   "That is because the Moon spins once in the same time it takes to make one orbit around Earth, about 27 days.",
+   "So the same side keeps facing us. The far side is not dark, it just never turns towards Earth."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "The Moon always shows Earth the same face"
+   },
+   {
+    "kind": "detail",
+    "text": "One Moon orbit takes about 27 days"
+   },
+   {
+    "kind": "narrow",
+    "text": "The far side of the Moon is not dark"
+   },
+   {
+    "kind": "broad",
+    "text": "The Moon orbits Earth"
+   }
+  ],
+  "id": "L1-space-moon-face",
+  "keepers": [
+   "moon",
+   "face",
+   "earth",
+   "spins",
+   "orbit"
+  ],
+  "level": 1,
+  "predictions": [
+   {
+    "correct": true,
+    "text": "Because the Moon spins once per orbit"
+   },
+   {
+    "correct": false,
+    "text": "Because the Moon never spins at all"
+   },
+   {
+    "correct": false,
+    "text": "Because clouds hide the other side"
+   }
+  ],
+  "question": "Why do we always see the same side of the Moon?",
+  "title": "The Moon's same face",
+  "topic": "Space",
+  "tray": [
+   "moon",
+   "face",
+   "earth",
+   "spins",
+   "orbit",
+   "days",
+   "side",
+   "night",
+   "dark",
+   "same"
+  ],
+  "why": "The whole text explains why we always see the same face. The 27 days is just a detail that helps explain it."
+ },
+ {
+  "chunks": [
+   "The red ball in cricket can swing through the air, curving away from a straight path. Bowlers polish one side to make this happen.",
+   "They rub one side smooth and shiny, and leave the other side rough. The smooth side slips through the air faster.",
+   "That difference makes the ball curve. Batters must watch it closely, because it does not fly straight."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "Bowlers polish one side so the ball swings"
+   },
+   {
+    "kind": "detail",
+    "text": "Batters must watch the ball closely"
+   },
+   {
+    "kind": "narrow",
+    "text": "The smooth side slips through the air faster"
+   },
+   {
+    "kind": "broad",
+    "text": "Cricket is played with a red ball"
+   }
+  ],
+  "id": "L1-sport-cricket-swing",
+  "keepers": [
+   "cricket",
+   "ball",
+   "swing",
+   "bowlers",
+   "polish"
+  ],
+  "level": 1,
+  "predictions": [
+   {
+    "correct": true,
+    "text": "To make the ball swing in the air"
+   },
+   {
+    "correct": false,
+    "text": "To make the ball bounce higher"
+   },
+   {
+    "correct": false,
+    "text": "To make the ball easier to see"
+   }
+  ],
+  "question": "Why do bowlers polish only one side of a cricket ball?",
+  "title": "The swinging cricket ball",
+  "topic": "Sport",
+  "tray": [
+   "cricket",
+   "ball",
+   "swing",
+   "bowlers",
+   "polish",
+   "smooth",
+   "rough",
+   "air",
+   "curve",
+   "batters"
+  ],
+  "why": "The whole text is about polishing one side to make the ball swing. Watching closely is just what batters have to do because of it."
+ },
+ {
+  "chunks": [
+   "In a storm, you see lightning before you hear thunder. Light and sound leave the storm at the same moment.",
+   "Light travels much faster than sound, almost a million times faster. So the flash reaches your eyes first.",
+   "Sound takes longer to cross the sky. That is why the rumble comes seconds after the flash."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "You see lightning first because light travels faster than sound"
+   },
+   {
+    "kind": "detail",
+    "text": "The rumble comes seconds after the flash"
+   },
+   {
+    "kind": "narrow",
+    "text": "Light travels almost a million times faster than sound"
+   },
+   {
+    "kind": "broad",
+    "text": "Storms make lightning and thunder"
+   }
+  ],
+  "id": "L1-how-lightning-thunder",
+  "keepers": [
+   "lightning",
+   "thunder",
+   "light",
+   "sound",
+   "faster"
+  ],
+  "level": 1,
+  "predictions": [
+   {
+    "correct": true,
+    "text": "Because light travels faster than sound"
+   },
+   {
+    "correct": false,
+    "text": "Because lightning happens closer to you than thunder"
+   },
+   {
+    "correct": false,
+    "text": "Because sound travels faster than light"
+   }
+  ],
+  "question": "Why do you see lightning before you hear thunder?",
+  "title": "Lightning before thunder",
+  "topic": "How Things Work",
+  "tray": [
+   "storm",
+   "lightning",
+   "thunder",
+   "light",
+   "sound",
+   "faster",
+   "flash",
+   "rumble",
+   "seconds",
+   "sky"
+  ],
+  "why": "The whole text explains that light beats sound to your eyes and ears. The rumble coming later is just one detail."
+ },
+ {
+  "chunks": [
+   "In 1872, sailors found a ship called the Mary Celeste sailing alone at sea. There was nobody on board.",
+   "Its cargo was safe, food and water were still there, and the crew's belongings were untouched. Only one lifeboat was missing.",
+   "No one ever found the crew, and no one knows why they left. The Mary Celeste is still one of the sea's great mysteries."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "The Mary Celeste was found sailing with no crew"
+   },
+   {
+    "kind": "detail",
+    "text": "Only one lifeboat was missing"
+   },
+   {
+    "kind": "narrow",
+    "text": "Food and water were still on board"
+   },
+   {
+    "kind": "broad",
+    "text": "Ships can sail across the ocean"
+   }
+  ],
+  "id": "L1-mysteries-mary-celeste",
+  "keepers": [
+   "mary",
+   "celeste",
+   "ship",
+   "crew",
+   "missing"
+  ],
+  "level": 1,
+  "predictions": [
+   {
+    "correct": true,
+    "text": "They vanished and were never found"
+   },
+   {
+    "correct": false,
+    "text": "They were rescued by another ship"
+   },
+   {
+    "correct": false,
+    "text": "They hid in the cargo hold"
+   }
+  ],
+  "question": "What happened to the crew of the Mary Celeste?",
+  "title": "The ship with no crew",
+  "topic": "Mysteries",
+  "tray": [
+   "mary",
+   "celeste",
+   "ship",
+   "crew",
+   "sailors",
+   "cargo",
+   "lifeboat",
+   "missing",
+   "sea",
+   "mysteries"
+  ],
+  "why": "The whole text is about a ship found with nobody on board. The missing lifeboat is just one clue, not the whole story."
+ },
+ {
+  "chunks": [
+   "The James Webb Telescope launched on Christmas Day in 2021, and it orbits the Sun 1.5 million kilometres from Earth. Its mirror is coated in gold and made of eighteen pieces that fold up like a flower for launch. Because it sees infrared light, which our eyes cannot see, it can peer through dust clouds to watch stars being born.",
+   "Webb looks back in time. Light from the first galaxies took more than thirteen billion years to reach us, so the telescope shows them as they were long ago.",
+   "Scientists use images to learn how the stars and galaxies formed after the Big Bang."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "A space telescope that looks back to the first galaxies"
+   },
+   {
+    "kind": "detail",
+    "text": "Its gold mirror folds up like a flower"
+   },
+   {
+    "kind": "narrow",
+    "text": "Webb can peer through dust clouds to watch stars being born"
+   },
+   {
+    "kind": "broad",
+    "text": "Telescopes help us learn about space"
+   }
+  ],
+  "id": "L2-space-james-webb",
+  "keepers": [
+   "Webb",
+   "infrared",
+   "because",
+   "thirteen",
+   "galaxies"
+  ],
+  "level": 2,
+  "predictions": [
+   {
+    "correct": false,
+    "text": "The James Webb telescope sits on a mountain in Chile and looks up at night."
+   },
+   {
+    "correct": true,
+    "text": "The James Webb telescope can see the first galaxies because it detects infrared light."
+   },
+   {
+    "correct": false,
+    "text": "The James Webb telescope was launched to replace all the satellites around Earth."
+   }
+  ],
+  "question": "What makes the James Webb telescope different from earlier telescopes?",
+  "title": "The Telescope That Sees Back in Time",
+  "topic": "Space",
+  "tray": [
+   "Webb",
+   "telescope",
+   "gold",
+   "eighteen",
+   "infrared",
+   "dust",
+   "galaxies",
+   "thirteen",
+   "billion",
+   "because"
+  ],
+  "why": "Webb's big idea is seeing the first galaxies, and the gold mirror and the dust clouds are just cool details along the way."
+ },
+ {
+  "chunks": [
+   "The platypus has a bill like a duck, a tail like a beaver and fur like an otter, yet it is a mammal that lays eggs. A mother lays one or two tiny eggs in a burrow by a river, and the babies drink milk that seeps from her skin because she has no nipples.",
+   "A platypus hunts with its eyes, ears and nose shut. It sweeps its bill through the water to sense the tiny electric signals made by the muscles of shrimp and other small creatures.",
+   "Males also carry a sharp spur on each back leg that can give a painful sting."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "A mammal that lays eggs and hunts with its bill"
+   },
+   {
+    "kind": "detail",
+    "text": "Baby platypuses drink milk that seeps from their mother's skin"
+   },
+   {
+    "kind": "narrow",
+    "text": "A platypus hunts with its eyes, ears and nose shut"
+   },
+   {
+    "kind": "broad",
+    "text": "Australian animals have many strange features"
+   }
+  ],
+  "id": "L2-animals-platypus",
+  "keepers": [
+   "platypus",
+   "eggs",
+   "electric",
+   "two",
+   "bill"
+  ],
+  "level": 2,
+  "predictions": [
+   {
+    "correct": false,
+    "text": "A platypus is a kind of duck that learned to swim underwater."
+   },
+   {
+    "correct": true,
+    "text": "A platypus mixes duck, beaver and otter features, lays eggs, and hunts by sensing electricity."
+   },
+   {
+    "correct": false,
+    "text": "Platypuses hunt by sight, chasing fish through clear river water."
+   }
+  ],
+  "question": "What makes a platypus so strange?",
+  "title": "The Platypus Puzzle",
+  "topic": "Animals",
+  "tray": [
+   "platypus",
+   "bill",
+   "duck",
+   "beaver",
+   "eggs",
+   "two",
+   "milk",
+   "electric",
+   "spur",
+   "sting"
+  ],
+  "why": "The text is about all the strange ways a platypus is built, not just one odd fact like its bill."
+ },
+ {
+  "chunks": [
+   "The longest tennis match in history lasted eleven hours and five minutes, played over three days at Wimbledon in 2010. John Isner beat Nicolas Mahut in the fifth set by 70 games to 68, and the scoreboard stopped working at 47 games each.",
+   "Players and fans were worn out by the end. Isner could barely walk to the net to shake hands, and both men needed treatment for sore feet. The match changed the rules too, because Wimbledon now plays a tiebreak when the fifth set reaches twelve games each,",
+   "so no match can run that long again."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "The eleven-hour match that changed Wimbledon's rules"
+   },
+   {
+    "kind": "detail",
+    "text": "The scoreboard stopped working at 47 games each"
+   },
+   {
+    "kind": "narrow",
+    "text": "Isner could barely walk to the net to shake hands"
+   },
+   {
+    "kind": "broad",
+    "text": "Tennis matches can last a very long time"
+   }
+  ],
+  "id": "L2-sport-longest-tennis-match",
+  "keepers": [
+   "tennis",
+   "eleven",
+   "scoreboard",
+   "twelve",
+   "rules"
+  ],
+  "level": 2,
+  "predictions": [
+   {
+    "correct": true,
+    "text": "A match that lasted eleven hours led Wimbledon to add a tiebreak at twelve games each in the fifth set."
+   },
+   {
+    "correct": false,
+    "text": "Isner and Mahut played for eleven hours because they kept losing their rackets."
+   },
+   {
+    "correct": false,
+    "text": "Wimbledon banned five-set matches after Isner beat Mahut in 2010."
+   }
+  ],
+  "question": "Why did the longest tennis match change the rules?",
+  "title": "The Eleven-Hour Tennis Match",
+  "topic": "Sport",
+  "tray": [
+   "tennis",
+   "Isner",
+   "Mahut",
+   "Wimbledon",
+   "eleven",
+   "scoreboard",
+   "tiebreak",
+   "twelve",
+   "games",
+   "rules"
+  ],
+  "why": "The text is about how one very long match led to a new rule, not just about how tired the players were."
+ },
+ {
+  "chunks": [
+   "A microwave oven does not cook food with heat from outside, like a normal oven. It sends out tiny waves of energy called microwaves, which make the water inside food vibrate. The shaking water molecules warm up as they rub together, so the food heats from the inside out.",
+   "That is also why some things should never go in a microwave. Metal reflects the waves instead of soaking them up, so it can spark and damage the oven. A whole egg can burst too, because steam builds up inside the shell with nowhere to go,",
+   "so handle hot food with care."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "A microwave heats food from the inside out"
+   },
+   {
+    "kind": "detail",
+    "text": "A whole egg can burst in a microwave"
+   },
+   {
+    "kind": "narrow",
+    "text": "Metal can spark and damage a microwave oven"
+   },
+   {
+    "kind": "broad",
+    "text": "Kitchen machines make cooking faster and easier"
+   }
+  ],
+  "id": "L2-how-microwave-oven",
+  "keepers": [
+   "microwave",
+   "water",
+   "vibrate",
+   "because",
+   "metal"
+  ],
+  "level": 2,
+  "predictions": [
+   {
+    "correct": false,
+    "text": "A microwave cooks food with a tiny flame hidden inside the oven."
+   },
+   {
+    "correct": false,
+    "text": "A microwave heats food by blowing very hot air around it like a fan oven."
+   },
+   {
+    "correct": true,
+    "text": "A microwave heats food by making the water inside it vibrate."
+   }
+  ],
+  "question": "How does a microwave oven cook food?",
+  "title": "How a Microwave Cooks Your Dinner",
+  "topic": "How Things Work",
+  "tray": [
+   "microwave",
+   "oven",
+   "waves",
+   "water",
+   "vibrate",
+   "molecules",
+   "metal",
+   "spark",
+   "egg",
+   "because"
+  ],
+  "why": "The main idea is how microwaves make water shake to heat food, and the egg and metal warnings are just examples of what happens."
+ },
+ {
+  "chunks": [
+   "The Voynich manuscript is a book no one has ever been able to read. It was written about six hundred years ago in a strange language that matches no known tongue, and its pages are filled with drawings of plants that no one can name. It is named after Wilfrid Voynich, the bookseller who bought it in 1912.",
+   "Many clever people have tried to crack its code. Codebreakers, language experts and computer programs have all studied the pages, yet no one has proved what the book says.",
+   "Some think it is a lost book of medicine, while others think it is a clever hoax."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "A six-hundred-year-old book no one can read"
+   },
+   {
+    "kind": "detail",
+    "text": "Its pages are filled with drawings of plants no one can name"
+   },
+   {
+    "kind": "narrow",
+    "text": "Codebreakers and computers have studied its pages"
+   },
+   {
+    "kind": "broad",
+    "text": "Old books can hold secrets from the past"
+   }
+  ],
+  "id": "L2-mysteries-voynich-manuscript",
+  "keepers": [
+   "Voynich",
+   "manuscript",
+   "language",
+   "plants",
+   "six"
+  ],
+  "level": 2,
+  "predictions": [
+   {
+    "correct": false,
+    "text": "The Voynich manuscript is blank, so there is nothing to read."
+   },
+   {
+    "correct": true,
+    "text": "The Voynich manuscript is written in a language no one knows, so its meaning is still a mystery."
+   },
+   {
+    "correct": false,
+    "text": "The Voynich manuscript was written in French, but the handwriting is too messy to read."
+   }
+  ],
+  "question": "Why can no one read the Voynich manuscript?",
+  "title": "The Book No One Can Read",
+  "topic": "Mysteries",
+  "tray": [
+   "Voynich",
+   "manuscript",
+   "book",
+   "language",
+   "plants",
+   "six",
+   "code",
+   "medicine",
+   "hoax",
+   "drawings"
+  ],
+  "why": "The main idea is that a very old book is still unreadable, not just one strange drawing or one guess about it."
+ },
+ {
+  "chunks": [
+   "In aquariums around the world, keepers have a familiar problem. An octopus in its tank at closing time is gone by morning, found in another tank or on the floor. People thought the secret was intelligence alone, and octopuses are clever. They can open jars and solve puzzles.",
+   "However, the real trick is in the body, not the brain. An octopus has no bones, so it can squeeze through any gap wider than its beak, its only hard part. A gap the size of a coin is enough, because the rest is soft muscle that flattens and stretches.",
+   "That is why keepers weigh down lids and block pipes. An escape is not naughtiness. Its body was built to squeeze into rock crevices to hunt crabs and hide from sharks. In the wild, that skill keeps it alive. In a tank, it looks like magic."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "An octopus escapes because its boneless body can squeeze through tiny gaps"
+   },
+   {
+    "kind": "detail",
+    "text": "Octopuses can open jars and solve puzzles"
+   },
+   {
+    "kind": "narrow",
+    "text": "Keepers weigh down lids to stop octopuses escaping from tanks"
+   },
+   {
+    "kind": "broad",
+    "text": "Sea animals have clever ways to survive in the ocean"
+   }
+  ],
+  "id": "L3-animals-octopus-escape",
+  "keepers": [
+   "octopus",
+   "however",
+   "bones",
+   "beak",
+   "because"
+  ],
+  "level": 3,
+  "predictions": [
+   {
+    "correct": true,
+    "text": "An octopus escapes because its soft body can squeeze through tiny gaps, not just because it is clever."
+   },
+   {
+    "correct": false,
+    "text": "An octopus escapes by using its arms to unlock doors and climb out of any tank."
+   },
+   {
+    "correct": false,
+    "text": "An octopus escapes because it can change colour and turn invisible to keepers."
+   }
+  ],
+  "question": "What makes an octopus so good at escaping?",
+  "title": "The Octopus That Vanished",
+  "topic": "Animals",
+  "tray": [
+   "octopus",
+   "keepers",
+   "clever",
+   "however",
+   "bones",
+   "beak",
+   "because",
+   "squeeze",
+   "crabs",
+   "magic"
+  ],
+  "why": "The twist is that the body, not just the brain, does the escaping - no bones means it can squeeze through a tiny gap."
+ },
+ {
+  "chunks": [
+   "When Pluto was found in 1930, astronomers celebrated it as the ninth planet. It was small, cold and far away, but it circled the Sun like the other planets. School books listed nine planets, and children learned Pluto as the last one.",
+   "However, the story changed when astronomers found more icy worlds past Neptune, including Eris in 2005, about the same size as Pluto. If Pluto was a planet, then Eris would have to be one too, and perhaps dozens more. Scientists had to decide what a planet really is.",
+   "In 2006, the International Astronomical Union agreed on a new test. A planet must orbit the Sun, be round, and clear its neighbourhood of other objects. Pluto fails the last test because it shares its path with other icy bodies. It did not shrink or move away. It was reclassified as a dwarf planet."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "Pluto was reclassified because it does not clear its path, under a new planet test"
+   },
+   {
+    "kind": "detail",
+    "text": "Eris, found in 2005, is about the same size as Pluto"
+   },
+   {
+    "kind": "narrow",
+    "text": "School books once listed nine planets, with Pluto last"
+   },
+   {
+    "kind": "broad",
+    "text": "Space is full of distant worlds waiting to be found"
+   }
+  ],
+  "id": "L3-space-pluto-planet",
+  "keepers": [
+   "Pluto",
+   "however",
+   "because",
+   "clear",
+   "dwarf"
+  ],
+  "level": 3,
+  "predictions": [
+   {
+    "correct": true,
+    "text": "Pluto is no longer a planet because scientists changed what a planet means, and Pluto does not clear its path around the Sun."
+   },
+   {
+    "correct": false,
+    "text": "Pluto is no longer a planet because it drifted away from the Sun and left the solar system."
+   },
+   {
+    "correct": false,
+    "text": "Pluto is no longer a planet because it shrank until it was too small to see with a telescope."
+   }
+  ],
+  "question": "Why is Pluto no longer called a planet?",
+  "title": "Pluto Loses Its Planet Badge",
+  "topic": "Space",
+  "tray": [
+   "Pluto",
+   "planet",
+   "however",
+   "Eris",
+   "because",
+   "orbit",
+   "round",
+   "clear",
+   "dwarf",
+   "Neptune"
+  ],
+  "why": "The twist is that Pluto did not change - the rule changed, and Pluto fails the new test because it has not cleared its path."
+ },
+ {
+  "chunks": [
+   "Every marathon is the same strange distance, 42.195 kilometres. Most people assume the number comes from ancient Greece, from the legend of a messenger who ran from Marathon to Athens. It is a great story, and the race is named after that town, but the distance is not ancient at all.",
+   "The real reason is more recent, and a little bit royal. At the London Olympics in 1908, the race was planned to start at Windsor Castle and finish at the Olympic Stadium. However, organisers lengthened it by about two kilometres so runners would finish in front of the royal box.",
+   "In 1921, officials made that London distance the official standard for every marathon, because it had become the most famous version. Runners today do not run an ancient distance. They run one fixed so the King could see the finish."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "The marathon is 42.195 kilometres because the 1908 race was lengthened for the royal box"
+   },
+   {
+    "kind": "detail",
+    "text": "The 1908 London race was planned to start at Windsor Castle"
+   },
+   {
+    "kind": "narrow",
+    "text": "The marathon is named after the town of Marathon in Greece"
+   },
+   {
+    "kind": "broad",
+    "text": "Long-distance running has a proud history in the Olympics"
+   }
+  ],
+  "id": "L3-sport-marathon-distance",
+  "keepers": [
+   "marathon",
+   "however",
+   "royal",
+   "because",
+   "official"
+  ],
+  "level": 3,
+  "predictions": [
+   {
+    "correct": true,
+    "text": "The marathon distance comes from the 1908 London Olympics, when the race was lengthened so it could finish in front of the royal family."
+   },
+   {
+    "correct": false,
+    "text": "The marathon distance is the exact distance a messenger ran from Marathon to Athens in ancient Greece."
+   },
+   {
+    "correct": false,
+    "text": "The marathon distance was chosen by scientists because 42 kilometres is the longest a human can safely run."
+   }
+  ],
+  "question": "Why is a marathon exactly 42.195 kilometres?",
+  "title": "Why a Marathon Is 42 Kilometres",
+  "topic": "Sport",
+  "tray": [
+   "marathon",
+   "distance",
+   "however",
+   "London",
+   "royal",
+   "because",
+   "official",
+   "runners",
+   "King",
+   "Athens"
+  ],
+  "why": "The twist is that the distance is not ancient - it was set in 1908 so the race would finish in front of the King and Queen."
+ },
+ {
+  "chunks": [
+   "On a noisy plane, noise-cancelling headphones can make the world seem quiet, even before music plays. Many people think they work like earplugs, with thick padding that blocks sound. The padding helps a little, but it cannot explain the silence, because low engine sounds pass straight through foam.",
+   "However, the real trick is that the headphones fight sound with sound. A microphone listens to the noise around you, and a computer works out what that sound wave looks like. It then plays a second wave that is the opposite, so the two waves cancel each other out.",
+   "When the two waves meet, they flatten each other, and your ear hears much less noise. That is why the effect is strongest on steady sounds like engines, and weaker on sudden sounds like a door slamming. Silence here is made by adding sound, not blocking it."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "Noise-cancelling headphones make silence by playing an opposite sound wave"
+   },
+   {
+    "kind": "detail",
+    "text": "A microphone listens to the noise around you"
+   },
+   {
+    "kind": "narrow",
+    "text": "The headphones work best on steady engine sounds"
+   },
+   {
+    "kind": "broad",
+    "text": "New technology can make travel more comfortable"
+   }
+  ],
+  "id": "L3-how-headphones-silence",
+  "keepers": [
+   "headphones",
+   "however",
+   "because",
+   "opposite",
+   "cancel"
+  ],
+  "level": 3,
+  "predictions": [
+   {
+    "correct": true,
+    "text": "Noise-cancelling headphones make silence by playing a sound wave that is the opposite of the noise, so the two cancel each other out."
+   },
+   {
+    "correct": false,
+    "text": "Noise-cancelling headphones make silence by blocking all sound with thick foam that seals your ears shut."
+   },
+   {
+    "correct": false,
+    "text": "Noise-cancelling headphones make silence by turning the volume down so low that outside noise disappears."
+   }
+  ],
+  "question": "How do noise-cancelling headphones make things quieter?",
+  "title": "The Headphones That Make Silence",
+  "topic": "How Things Work",
+  "tray": [
+   "headphones",
+   "sound",
+   "however",
+   "microphone",
+   "because",
+   "opposite",
+   "waves",
+   "cancel",
+   "silence",
+   "engine"
+  ],
+  "why": "The twist is that silence is made by adding sound - an opposite wave cancels the noise out."
+ },
+ {
+  "chunks": [
+   "In 1976, NASA's Viking 1 photographed a region of Mars named Cydonia, and one picture caused a stir. In the grainy image, a hill seemed to show two eyes, a nose, and a mouth, like a giant stone face. Some thought aliens had built it.",
+   "However, later spacecraft took sharper pictures of the same hill, and the face was gone. With more detail, it was plainly a natural mesa, a flat-topped hill shaped by wind. The eyes and mouth were shadows, because the first photo was blurry and the Sun was low.",
+   "Scientists call this pareidolia, how our brains spot faces in clouds and toast. We are so good at recognising faces that we see them where none exist. The face on Mars was never a statue. It was a trick of light on an ordinary hill."
+  ],
+  "headlines": [
+   {
+    "kind": "correct",
+    "text": "The face on Mars was a natural hill that looked like a face in one blurry photo"
+   },
+   {
+    "kind": "detail",
+    "text": "Viking 1 photographed the Cydonia region in 1976"
+   },
+   {
+    "kind": "narrow",
+    "text": "Our brains spot faces in clouds and toast"
+   },
+   {
+    "kind": "broad",
+    "text": "Mars has always fascinated people who look at the sky"
+   }
+  ],
+  "id": "L3-mysteries-face-mars",
+  "keepers": [
+   "Mars",
+   "however",
+   "because",
+   "shadows",
+   "pareidolia"
+  ],
+  "level": 3,
+  "predictions": [
+   {
+    "correct": true,
+    "text": "The face on Mars was a hill that only looked like a face in one low-resolution photo, because of shadows and the angle of the light."
+   },
+   {
+    "correct": false,
+    "text": "The face on Mars was a giant statue built by aliens to mark their home on the planet."
+   },
+   {
+    "correct": false,
+    "text": "The face on Mars was a secret base that NASA hid from the public for many years."
+   }
+  ],
+  "question": "What was the face on Mars really?",
+  "title": "The Face on Mars",
+  "topic": "Mysteries",
+  "tray": [
+   "Mars",
+   "face",
+   "however",
+   "photo",
+   "because",
+   "shadows",
+   "hill",
+   "pareidolia",
+   "brains",
+   "light"
+  ],
+  "why": "The twist is that sharper photos showed no face at all - it was shadows on a hill, and our brains love spotting faces."
+ }
+];
+
+const LEVELS = {
+  1: {name: "Sprout Squeezer", blurb: "60-word stories, one paragraph, clear traps."},
+  2: {name: "Detective Squeezer", blurb: "100-word stories, two paragraphs, trickier traps."},
+  3: {name: "Editor Squeezer", blurb: "140-word stories, with a twist. Subtle traps."}
+};
+const ROUNDS_PER_GAME = 5;
+const UNLOCK_GAMES = 2;      // qualifying games needed to unlock the next level
+const UNLOCK_HEADLINES = 3;  // headlines correct per qualifying game
+
+/* ---- tiny storage, safe when localStorage is unavailable ---- */
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem("squeezer:"+k); return v===null?d:JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem("squeezer:"+k, JSON.stringify(v)); }catch(e){} }
+};
+function unlockedLevels(){ const u = store.get("unlocked", [1]); return [1,2,3].filter(function(l){ return u.indexOf(l) >= 0; }); }
+function isUnlocked(l){ return unlockedLevels().indexOf(l) >= 0; }
+function bestFor(l){ return store.get("best:"+l, null); }
+function qualifyingGames(l){ return store.get("qual:"+l, 0); }
+
+/* ---- helpers ---- */
+function shuffle(a){ const r = a.slice(); for(let i=r.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); const t=r[i]; r[i]=r[j]; r[j]=t; } return r; }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function words(s){ return s.trim().split(/\s+/).filter(Boolean).length; }
+function fullText(t){ return t.chunks.join(" "); }
+function poolFor(level){ return TEXTS.filter(function(t){ return t.level === level; }); }
+function drawTexts(level, n){
+  const pool = shuffle(poolFor(level));
+  return pool.slice(0, Math.min(n, pool.length));
+}
+function headlineByKind(t, kind){ return t.headlines.filter(function(h){ return h.kind === kind; })[0]; }
+function correctHeadline(t){ return headlineByKind(t, "correct"); }
+function trapLabel(kind){
+  return {detail:"a juicy detail", narrow:"true of one part only", broad:"true of the topic, not this story"}[kind] || "not the main idea";
+}
+
+/* ---- session state ---- */
+let S = null;   // the current game
+function newGame(mode, level){
+  S = {
+    mode: mode, level: level,
+    texts: drawTexts(level, ROUNDS_PER_GAME),
+    round: 0,                       // 0-based
+    screen: "predict",              // predict | chunks | squeeze | squeezeB | handoff | feedback | results
+    revealed: 1,                    // chunks revealed in the read step
+    predPick: null,                 // index into predictions
+    predCorrect: null,
+    headPick: null,                 // headline text picked (player A / squeezer)
+    headPickB: null,                // headline text picked by player B (Both Squeeze)
+    keepPick: [],                   // keeper words picked
+    keepPickB: [],
+    totals: {pred: 0, head: 0, keep: 0, keepMax: 0},
+    perPlayer: {predA: 0, predB: 0},
+    roundLog: []
+  };
+  dealRound();
+  render();
+}
+function dealRound(){
+  // Shuffle each round's options ONCE, so re-renders never move buttons.
+  const t = currentText();
+  S.predOrder = shuffle(t.predictions);
+  S.headOrder = shuffle(t.headlines);
+  S.trayOrder = shuffle(t.tray);
+}
+function currentText(){ return S.texts[S.round]; }
+function predictor(){ return (S.round % 2 === 0) ? "Player 1" : "Player 2"; }  // Take Turns
+function squeezer(){ return (S.round % 2 === 0) ? "Player 2" : "Player 1"; }
+function roundTitle(){
+  return "Story " + (S.round+1) + " of " + ROUNDS_PER_GAME + " - " + LEVELS[S.level].name;
+}
+
+/* ---- flow actions (called from buttons) ---- */
+function pickPrediction(i){
+  if(S.screen !== "predict" || S.predPick !== null) return;
+  S.predPick = i;
+  S.predCorrect = !!S.predOrder[i].correct;
+  if(S.predCorrect){ S.totals.pred++; if(predictor()==="Player 1") S.perPlayer.predA++; else S.perPlayer.predB++; }
+  render();
+}
+function goChunks(){ S.screen = "chunks"; S.revealed = 1; render(); }
+function chunkStep(d){
+  S.revealed = Math.max(1, Math.min(3, S.revealed + d));
+  render();
+}
+function goSqueeze(){ S.screen = "squeeze"; render(); }
+function pickHeadline(text){
+  if(S.screen === "squeeze") S.headPick = text;
+  else if(S.screen === "squeezeB") S.headPickB = text;
+  render();
+}
+function toggleKeeper(w){
+  const list = (S.screen === "squeeze") ? S.keepPick : S.keepPickB;
+  const i = list.indexOf(w);
+  if(i >= 0) list.splice(i, 1);
+  else if(list.length < 5) list.push(w);
+  render();
+}
+function squeezeReady(){
+  if(S.screen === "squeeze") return S.headPick !== null && S.keepPick.length === 5;
+  if(S.screen === "squeezeB") return S.headPickB !== null && S.keepPickB.length === 5;
+  return false;
+}
+function checkSqueeze(){
+  if(!squeezeReady()) return;
+  if(S.mode === "both" && S.screen === "squeeze"){ S.screen = "handoff"; render(); return; }
+  finishRound();
+}
+function goSqueezeB(){ S.screen = "squeezeB"; render(); }
+function keepScore(picks, t){
+  let n = 0;
+  picks.forEach(function(w){ if(t.keepers.indexOf(w) >= 0) n++; });
+  return n;
+}
+function finishRound(){
+  const t = currentText();
+  const headOk = (S.mode === "both")
+    ? (S.headPick === correctHeadline(t).text || S.headPickB === correctHeadline(t).text)
+    : (S.headPick === correctHeadline(t).text);
+  let keepOk;
+  if(S.mode === "both"){
+    keepOk = Math.max(keepScore(S.keepPick, t), keepScore(S.keepPickB, t));
+  } else {
+    keepOk = keepScore(S.keepPick, t);
+  }
+  if(headOk) S.totals.head++;
+  S.totals.keep += keepOk;
+  S.totals.keepMax += 5;
+  S.roundLog.push({headOk: headOk, keepOk: keepOk, predOk: S.predCorrect});
+  S.screen = "feedback";
+  render();
+}
+function nextRound(){
+  S.round++;
+  if(S.round >= ROUNDS_PER_GAME){ finishGame(); return; }
+  S.screen = "predict"; S.revealed = 1; S.predPick = null; S.predCorrect = null;
+  S.headPick = null; S.headPickB = null; S.keepPick = []; S.keepPickB = [];
+  dealRound();
+  render();
+}
+function finishGame(){
+  const l = S.level;
+  // best accuracy per level
+  const prev = bestFor(l);
+  if(!prev || S.totals.head > prev.head || (S.totals.head === prev.head && S.totals.keep > prev.keep)){
+    store.set("best:"+l, {head: S.totals.head, keep: S.totals.keep});
+  }
+  // unlock rule: 2 games at a level with at least 3 of 5 headlines correct
+  S.unlocked = false;
+  if(S.totals.head >= UNLOCK_HEADLINES){
+    const q = qualifyingGames(l) + 1;
+    store.set("qual:"+l, q);
+    if(q >= UNLOCK_GAMES && l < 3 && !isUnlocked(l+1)){
+      const u = unlockedLevels(); u.push(l+1);
+      store.set("unlocked", u);
+      S.unlocked = l+1;
+    }
+  }
+  S.screen = "results";
+  render();
+}
+function goHome(){ S = null; render(); }
+function playAgain(){ newGame(S.mode, S.level); }
+
+/* ---- rendering ---- */
+const app = (typeof document !== "undefined") ? document.getElementById("app") : null;
+function render(){
+  if(!app) return;
+  if(!S){ app.innerHTML = homeHtml(); return; }
+  if(S.screen === "predict") app.innerHTML = predictHtml();
+  else if(S.screen === "chunks") app.innerHTML = chunksHtml();
+  else if(S.screen === "squeeze") app.innerHTML = squeezeHtml("A");
+  else if(S.screen === "handoff") app.innerHTML = handoffHtml();
+  else if(S.screen === "squeezeB") app.innerHTML = squeezeHtml("B");
+  else if(S.screen === "feedback") app.innerHTML = feedbackHtml();
+  else if(S.screen === "results") app.innerHTML = resultsHtml();
+  window.scrollTo(0, 0);
+}
+function homeHtml(){
+  let levels = "";
+  [1,2,3].forEach(function(l){
+    const locked = !isUnlocked(l);
+    const best = bestFor(l);
+    const q = qualifyingGames(l);
+    levels += '<div class="card"><strong>' + LEVELS[l].name + '</strong> '
+      + (locked ? '<span class="pill locked">Locked</span>' : '<span class="pill on">Open</span>') + '<br>'
+      + '<span class="muted small">' + LEVELS[l].blurb + '</span><br>'
+      + (best ? '<span class="small">Best so far: ' + best.head + ' of 5 headlines, ' + best.keep + ' of 25 keeper words.</span><br>' : '')
+      + (l < 3 && !locked ? '<span class="small muted">Qualifying games towards ' + LEVELS[l+1].name + ': ' + Math.min(q, UNLOCK_GAMES) + ' of ' + UNLOCK_GAMES + ' (need ' + UNLOCK_HEADLINES + ' of 5 headlines).</span>' : '')
+      + (locked ? '<br><span class="small muted">Unlocks after ' + UNLOCK_GAMES + ' games at ' + LEVELS[l-1].name + ' with at least ' + UNLOCK_HEADLINES + ' of 5 headlines.</span>' : '')
+      + '<br><button class="primary" ' + (locked ? 'disabled' : '') + ' onclick="startLevel(' + l + ')">Play ' + LEVELS[l].name + '</button></div>';
+  });
+  return '<h1>Story Squeezer</h1>'
+    + '<p><strong>Practise spotting what matters in a story.</strong></p>'
+    + '<p class="muted">Read a short true story, then squeeze it: pick the headline that says what it is mostly about, and keep the five words that matter most. No timers, no streaks - just reading with a question in mind.</p>'
+    + '<h3>How to play</h3>'
+    + '<p class="small">1. <strong>Question first</strong> - guess what the story will mostly be about.<br>'
+    + '2. <strong>Read in chunks</strong> - three short cards, in your own time. Re-read as much as you like.<br>'
+    + '3. <strong>The squeeze</strong> - pick 1 headline from 4, and keep 5 words from a tray of 10.<br>'
+    + '5 stories per game, about 10 minutes.</p>'
+    + '<h3>Play together</h3>'
+    + '<p><button class="primary" onclick="pickMode(\'turns\')">Take Turns</button>'
+    + '<button onclick="pickMode(\'both\')">Both Squeeze</button></p>'
+    + '<p class="small muted">Take Turns: alternate who predicts and who squeezes each story. '
+    + 'Both Squeeze: you both squeeze the same story in secret, then compare - if either of you gets the headline, you both get the point.</p>'
+    + '<div id="modeNote"></div>'
+    + '<h3>Levels</h3>' + levels
+    + '<p class="small muted">Levels never drop and never lock backwards. Replay any open level whenever you like.</p>';
+}
+let HOME_MODE = "turns";
+function pickMode(m){
+  HOME_MODE = m;
+  render();
+  const n = document.getElementById("modeNote");
+  if(n) n.innerHTML = '<p class="card"><strong>' + (m === "turns" ? "Take Turns" : "Both Squeeze") + '</strong> chosen. Pick a level below to play.</p>';
+}
+function startLevel(l){ if(isUnlocked(l)) newGame(HOME_MODE, l); }
+
+function predictHtml(){
+  const t = currentText();
+  const who = (S.mode === "turns") ? predictor() + " predicts" : "Predict together";
+  let h = '<p class="progress">' + roundTitle() + ' &middot; ' + esc(t.topic) + '</p>'
+    + '<h2>' + esc(t.title) + '</h2>'
+    + '<p><span class="tag">' + esc(t.topic) + '</span></p>'
+    + '<div class="card"><h3>Question first</h3><p>' + esc(who) + ' - hold this question in mind:</p>'
+    + '<p><strong>' + esc(t.question) + '</strong></p>'
+    + '<p class="small muted">What will this story mostly be about? A warm-up guess - 1 point if you are right, "Good guess" either way.</p>';
+  S.predOrder.forEach(function(p, i){
+    let cls = "";
+    if(S.predPick !== null){
+      if(p.correct) cls = "correct";
+      else if(i === S.predPick) cls = "wrongpick";
+    }
+    h += '<button class="opt ' + cls + '" ' + (S.predPick !== null ? 'disabled' : '') + ' onclick="pickPrediction(' + i + ')">' + esc(p.text) + '</button>';
+  });
+  if(S.predPick !== null){
+    h += '<p>' + (S.predCorrect ? '<strong>Good guess - that is what it is mostly about.</strong>' : '<strong>Good guess.</strong> The story is mostly about: <strong>' + esc(t.predictions.filter(function(p){ return p.correct; })[0].text) + '</strong>') + '</p>'
+      + '<button class="primary" onclick="goChunks()">Read the story</button>';
+  }
+  h += '</div>';
+  return h;
+}
+function chunksHtml(){
+  const t = currentText();
+  let h = '<p class="progress">' + roundTitle() + ' &middot; ' + esc(t.topic) + '</p>'
+    + '<h2>' + esc(t.title) + '</h2>'
+    + '<div class="card"><h3>Read in chunks</h3>'
+    + '<p class="small muted">Take your time. Nothing disappears, and you can re-read as much as you like.</p>';
+  for(let i = 0; i < 3; i++){
+    if(i < S.revealed) h += '<div class="chunk">' + esc(t.chunks[i]) + '</div>';
+    else h += '<div class="chunk" style="opacity:.45">Chunk ' + (i+1) + ' - tap "Next chunk" to reveal it.</div>';
+  }
+  h += '<div class="row">'
+    + '<button onclick="chunkStep(-1)" ' + (S.revealed <= 1 ? 'disabled' : '') + '>Back to chunk</button>'
+    + (S.revealed < 3
+        ? '<button class="primary" onclick="chunkStep(1)">Next chunk</button>'
+        : '<button class="primary" onclick="goSqueeze()">Squeeze it</button>')
+    + '</div></div>';
+  return h;
+}
+function squeezeHtml(who){
+  const t = currentText();
+  const headPick = (who === "A") ? S.headPick : S.headPickB;
+  const keepPick = (who === "A") ? S.keepPick : S.keepPickB;
+  const heads = S.headOrder;
+  const tray = S.trayOrder;
+  const label = (S.mode === "both")
+    ? (who === "A" ? "Player A is squeezing - Player B, look away!" : "Player B is squeezing - Player A, look away!")
+    : squeezer() + " squeezes";
+  let h = '<p class="progress">' + roundTitle() + ' &middot; ' + esc(t.topic) + '</p>'
+    + '<h2>' + esc(t.title) + '</h2>'
+    + '<div class="banner"><strong>' + esc(label) + '</strong></div>'
+    + '<details><summary>Show the story again</summary><div class="storytext">' + t.chunks.map(esc).join("</div><div class=\"storytext\">") + '</div></details>'
+    + '<div class="card"><h3>Pick the headline</h3>'
+    + '<p class="small muted">Which one says what the whole story is mostly about?</p>';
+  heads.forEach(function(hd){
+    h += '<button class="opt ' + (headPick === hd.text ? 'picked' : '') + '" onclick="pickHeadline(' + JSON.stringify(hd.text) + ')">' + esc(hd.text) + '</button>';
+  });
+  h += '</div><div class="card"><h3>Keep 5 words</h3>'
+    + '<p class="small muted">Tap 5 words from the tray - the ones the story could not do without. ' + keepPick.length + ' of 5 kept.</p><div class="tray">';
+  tray.forEach(function(w){
+    h += '<button class="tile ' + (keepPick.indexOf(w) >= 0 ? 'picked' : '') + '" onclick="toggleKeeper(' + JSON.stringify(w) + ')">' + esc(w) + '</button>';
+  });
+  h += '</div><button class="primary" ' + (squeezeReady() ? '' : 'disabled') + ' onclick="checkSqueeze()">Check my squeeze</button></div>';
+  return h;
+}
+function handoffHtml(){
+  return '<p class="progress">' + roundTitle() + '</p>'
+    + '<div class="banner"><h2>Player A is done</h2>'
+    + '<p>Player A, look away now. Player B - your turn to squeeze the same story.</p>'
+    + '<button class="primary" onclick="goSqueezeB()">Player B, start squeezing</button></div>';
+}
+function feedbackHtml(){
+  const t = currentText();
+  const log = S.roundLog[S.roundLog.length-1];
+  const correct = correctHeadline(t);
+  let h = '<p class="progress">' + roundTitle() + ' &middot; ' + esc(t.topic) + '</p>'
+    + '<h2>' + esc(t.title) + '</h2>';
+  if(S.mode === "both"){
+    h += '<div class="card"><h3>Side by side</h3>'
+      + '<p>Player A picked: <strong>' + esc(S.headPick) + '</strong> ' + (S.headPick === correct.text ? '(that is the main idea)' : '') + '</p>'
+      + '<p>Player B picked: <strong>' + esc(S.headPickB) + '</strong> ' + (S.headPickB === correct.text ? '(that is the main idea)' : '') + '</p>';
+    if(S.headPick !== S.headPickB){
+      h += '<p><strong>Talk it out - what did each of you notice?</strong></p>';
+    }
+    h += '</div>';
+  } else {
+    const picked = t.headlines.filter(function(x){ return x.text === S.headPick; })[0];
+    if(log.headOk){
+      h += '<div class="why"><strong>That is the main idea.</strong> ' + esc(t.why) + '</div>';
+    } else {
+      h += '<div class="gentle"><strong>Not quite - that one was ' + trapLabel(picked.kind) + ', not the main idea.</strong><br>' + esc(t.why) + '</div>';
+    }
+  }
+  if(S.mode === "both" && !log.headOk){
+    h += '<div class="gentle"><strong>Not quite this time.</strong> ' + esc(t.why) + '</div>';
+  }
+  h += '<div class="card"><h3>The main idea</h3><p><strong>' + esc(correct.text) + '</strong></p>'
+    + '<p class="small muted">' + esc(t.why) + '</p>'
+    + '<h3>The 5 keeper words</h3><p class="small muted">The words the story could not do without:</p><div class="tray">';
+  t.tray.forEach(function(w){
+    const isKeep = t.keepers.indexOf(w) >= 0;
+    const mine = (S.mode === "both")
+      ? (S.keepPick.indexOf(w) >= 0 || S.keepPickB.indexOf(w) >= 0)
+      : (S.keepPick.indexOf(w) >= 0);
+    let cls = "";
+    if(isKeep) cls = "keep";
+    else if(mine) cls = "miss";
+    h += '<span class="tile ' + cls + '">' + esc(w) + (isKeep && mine ? ' &#10003;' : '') + '</span>';
+  });
+  h += '</div><p>You kept <strong>' + log.keepOk + ' of 5</strong> keeper words.</p></div>';
+  h += '<div class="card"><p class="score">So far: ' + S.totals.head + ' of ' + (S.round+1) + ' headlines &middot; ' + S.totals.keep + ' of ' + S.totals.keepMax + ' keeper words &middot; ' + S.totals.pred + ' good guesses</p>';
+  if(S.round+1 < ROUNDS_PER_GAME) h += '<button class="primary" onclick="nextRound()">Next story</button>';
+  else h += '<button class="primary" onclick="nextRound()">See results</button>';
+  h += '</div>';
+  return h;
+}
+function resultsHtml(){
+  const l = S.level;
+  let h = '<h2>Game over - nicely squeezed</h2>'
+    + '<p class="muted">' + LEVELS[l].name + ' &middot; ' + (S.mode === "turns" ? "Take Turns" : "Both Squeeze") + '</p>'
+    + '<div class="card"><p class="score">Headlines: ' + S.totals.head + ' of ' + ROUNDS_PER_GAME + '</p>'
+    + '<p class="score">Keeper words: ' + S.totals.keep + ' of ' + S.totals.keepMax + '</p>'
+    + '<p class="score">Good guesses: ' + S.totals.pred + ' of ' + ROUNDS_PER_GAME + '</p>';
+  if(S.mode === "turns"){
+    h += '<p class="small">Predictions: Player 1 got ' + S.perPlayer.predA + ', Player 2 got ' + S.perPlayer.predB + '.</p>';
+  }
+  h += '</div>';
+  if(S.unlocked){
+    h += '<div class="why"><strong>New level unlocked: ' + LEVELS[S.unlocked].name + '!</strong><br>'
+      + 'Two games at ' + LEVELS[l].name + ' with at least ' + UNLOCK_HEADLINES + ' of 5 headlines. The next stories are longer and trickier - play it when you are ready.</div>';
+  } else if(l < 3){
+    h += '<div class="card"><p class="small">Towards ' + LEVELS[l+1].name + ': ' + Math.min(qualifyingGames(l), UNLOCK_GAMES) + ' of ' + UNLOCK_GAMES
+      + ' qualifying games (need ' + UNLOCK_HEADLINES + ' of 5 headlines). Levels never drop - keep playing.</p></div>';
+  }
+  h += '<p><button class="primary" onclick="playAgain()">Play again</button>'
+    + '<button onclick="goHome()">Home</button></p>'
+    + '<p class="small muted">A new game deals a fresh set of stories. Replay a level any time.</p>';
+  return h;
+}
+render();
+
+/* ---- node harness hook: core logic without a DOM ---- */
+if(typeof module !== "undefined" && module.exports){
+  module.exports = {TEXTS: TEXTS, LEVELS: LEVELS, drawTexts: drawTexts, correctHeadline: correctHeadline,
+    keepScore: keepScore, words: words, fullText: fullText, poolFor: poolFor, shuffle: shuffle,
+    newGame: newGame, pickPrediction: pickPrediction, goChunks: goChunks, chunkStep: chunkStep,
+    goSqueeze: goSqueeze, pickHeadline: pickHeadline, toggleKeeper: toggleKeeper,
+    squeezeReady: squeezeReady, checkSqueeze: checkSqueeze, goSqueezeB: goSqueezeB,
+    nextRound: nextRound, playAgain: playAgain, goHome: goHome, startLevel: startLevel,
+    pickMode: pickMode, qualifyingGames: qualifyingGames, isUnlocked: isUnlocked, bestFor: bestFor,
+    getS: function(){ return S; }};
+}
+</script>
+</body>
+</html>

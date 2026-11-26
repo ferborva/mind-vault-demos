@@ -44,6 +44,16 @@ for them.** That's what prototypes are for.
 
 **▶️ [Play it](https://ferborva.github.io/mind-vault-demos/)**
 
+## Story Squeezer
+
+Practise spotting what matters in a story. Read a short true story - weird animals,
+space, sport, how things work - then squeeze it: pick the headline that says what it
+is mostly about, and keep the five words that matter most. Five stories a game, about
+ten minutes. Play on your own, take turns with someone, or both squeeze the same story
+and compare. Three levels, longer and trickier stories as you show you can handle them.
+
+**▶️ [Play it](https://ferborva.github.io/mind-vault-demos/story-squeezer/)**
+
 ---
 
 Everything here runs entirely in your browser. No account, no network, no tracking,
