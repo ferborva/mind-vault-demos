@@ -54,6 +54,17 @@ and compare. Three levels, longer and trickier stories as you show you can handl
 
 **▶️ [Play it](https://ferborva.github.io/mind-vault-demos/story-squeezer/)**
 
+## Switcheroo!
+
+Practise remembering what you saw. Study a scene - a bedroom, a kitchen, a pirate
+ship, a space station, a garden, a classroom - look away while the sneaky switcher
+is at work, then spot what changed. Six rounds a game, about five to eight minutes.
+Play on your own, take turns with someone, or face off in Versus. Five levels,
+trickier changes as you show you can spot them.
+
+**▶️ [Play it](https://ferborva.github.io/mind-vault-demos/switcheroo/)**
+
+
 ---
 
 Everything here runs entirely in your browser. No account, no network, no tracking,

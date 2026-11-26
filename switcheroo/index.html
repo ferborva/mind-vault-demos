@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Switcheroo! - practise remembering what you saw</title>
+<style>
+  :root{
+    --bg:#eef6f3; --panel:#ffffff; --ink:#22302b; --muted:#5f7268;
+    --line:#cfe0d8; --accent:#0e7490; --accent-soft:#dff2f7;
+    --good:#2f6b4a; --good-soft:#e2f0e6; --gold:#8a6d1b;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Georgia,'Times New Roman',serif;font-size:18px;line-height:1.5}
+  #app{max-width:640px;margin:0 auto;padding:16px 16px 48px}
+  h1{font-size:34px;line-height:1.15;margin:8px 0 4px}
+  h2{font-size:24px;margin:6px 0 10px}
+  h3{font-size:19px;margin:18px 0 6px}
+  p{margin:8px 0}
+  .tag{display:inline-block;background:var(--accent-soft);color:var(--accent);
+    border:1px solid var(--accent);border-radius:999px;padding:4px 12px;
+    font-size:14px;font-family:system-ui,sans-serif}
+  .muted{color:var(--muted)}
+  .small{font-size:15px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;margin:12px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  button{font-family:system-ui,sans-serif;font-size:17px;min-height:48px;
+    border-radius:12px;border:2px solid var(--accent);background:var(--panel);
+    color:var(--ink);padding:10px 16px;margin:6px 6px 6px 0;cursor:pointer;
+    text-align:left;line-height:1.35}
+  button:hover{background:var(--accent-soft)}
+  button.primary{background:var(--accent);color:#fff;font-weight:700;text-align:center}
+  button.primary:disabled{background:#b9c9c4;border-color:#b9c9c4;cursor:default}
+  button:disabled{opacity:.55;cursor:default}
+  button.picked{background:var(--accent-soft);border-color:var(--accent);
+    box-shadow:0 0 0 2px var(--accent) inset}
+  button.correct{background:var(--good-soft);border-color:var(--good)}
+  .opt{display:block;width:100%}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:999px;
+    padding:4px 12px;font-size:14px;font-family:system-ui,sans-serif;background:var(--panel)}
+  .pill.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .pill.locked{opacity:.55}
+  .score{font-size:20px;font-weight:700}
+  .why{background:var(--good-soft);border-radius:8px;padding:10px 14px;margin:10px 0}
+  .gentle{background:#f7e8e2;border-radius:8px;padding:10px 14px;margin:10px 0}
+  .banner{background:var(--accent-soft);border:1px dashed var(--accent);
+    border-radius:var(--radius);padding:14px;margin:12px 0;text-align:center}
+  .progress{font-family:system-ui,sans-serif;font-size:14px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+  .cell{min-height:76px;border:2px solid var(--line);border-radius:12px;
+    background:var(--panel);font-size:40px;line-height:1;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    padding:0;margin:0;text-align:center}
+  button.cell:hover{background:var(--accent-soft)}
+  .cell.emptycell{border-style:dashed;background:#f4faf7}
+  .cell .add{font-size:22px;margin-left:2px}
+  .grid.small{gap:6px}
+  .grid.small .cell{min-height:52px;font-size:26px;border-radius:8px}
+  .grid.small .cell .add{font-size:14px}
+  .cellstatic{min-height:76px;border:2px solid var(--line);border-radius:12px;
+    background:var(--panel);font-size:40px;line-height:1;
+    display:flex;align-items:center;justify-content:center;padding:0;margin:0}
+  .cellstatic.emptycell{border-style:dashed;background:#f4faf7}
+  .cellstatic .add{font-size:22px;margin-left:2px}
+  .grid.small .cellstatic{min-height:52px;font-size:26px;border-radius:8px}
+  .grid.small .cellstatic .add{font-size:14px}
+  .tile{min-height:48px;min-width:64px;padding:10px 14px;border-radius:999px;
+    border:2px solid var(--accent);background:var(--panel);font-size:24px;
+    font-family:system-ui,sans-serif;cursor:pointer;text-align:center}
+  .tile.picked{background:var(--accent);color:#fff;font-weight:700}
+  .tray{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+/* Switcheroo! - Week 1 game 2, Mind Vault. Memory and Retention.
+   Practise remembering what you saw. Accuracy only, never speed.
+   No timers, no streaks, no coins, no shop, no daily bonus. */
+
+/* ---- scene data ----
+   Six themes. Each theme is a 3-by-4 grid of 12 cells. Every cell has a
+   place label (used in reveal sentences) and one or two candidate items,
+   so each theme holds at least 14 items. An item with `vars` can change
+   colour: vars[0] is the colour it starts as. */
+const THEMES = [
+{id:"bedroom", name:"The bedroom", emoji:"🛏️", cells:[
+  {place:"on the bed", items:[{e:"🐱",n:"cat"},{e:"🐶",n:"dog"}]},
+  {place:"on the pillow", items:[{e:"🧸",n:"teddy"}]},
+  {place:"on the rug", items:[{e:"🔴",n:"red ball",vars:[{e:"🔴",n:"red ball"},{e:"🔵",n:"blue ball"},{e:"🟢",n:"green ball"}]}]},
+  {place:"on the shelf", items:[{e:"📕",n:"red book",vars:[{e:"📕",n:"red book"},{e:"📗",n:"green book"},{e:"📘",n:"blue book"}]},{e:"🕯️",n:"candle"}]},
+  {place:"by the window", items:[{e:"🪴",n:"plant"}]},
+  {place:"on the desk", items:[{e:"⏰",n:"alarm clock"}]},
+  {place:"under the bed", items:[{e:"🧦",n:"sock"}]},
+  {place:"on the floor", items:[{e:"👟",n:"shoe"}]},
+  {place:"by the door", items:[{e:"🎒",n:"backpack"}]},
+  {place:"on the chair", items:[{e:"🧢",n:"cap"}]},
+  {place:"in the toy box", items:[{e:"🎲",n:"dice"}]},
+  {place:"on the wall", items:[{e:"🖼️",n:"picture"}]}
+]},
+{id:"kitchen", name:"The kitchen", emoji:"🍳", cells:[
+  {place:"on the table", items:[{e:"🍕",n:"pizza"},{e:"🍰",n:"cake"}]},
+  {place:"on the bench", items:[{e:"🍎",n:"red apple",vars:[{e:"🍎",n:"red apple"},{e:"🍏",n:"green apple"}]},{e:"🍊",n:"orange"}]},
+  {place:"on the shelf", items:[{e:"☕",n:"cup"}]},
+  {place:"in the sink", items:[{e:"🍽️",n:"plate"}]},
+  {place:"on the stove", items:[{e:"🍳",n:"pan"}]},
+  {place:"in the fruit bowl", items:[{e:"🍌",n:"banana"}]},
+  {place:"on the floor", items:[{e:"🔴",n:"red ball",vars:[{e:"🔴",n:"red ball"},{e:"🔵",n:"blue ball"},{e:"🟢",n:"green ball"}]}]},
+  {place:"by the fridge", items:[{e:"🥛",n:"milk"}]},
+  {place:"on the windowsill", items:[{e:"🌻",n:"sunflower"}]},
+  {place:"hanging on the wall", items:[{e:"🧂",n:"salt"}]},
+  {place:"in the cupboard", items:[{e:"🥣",n:"bowl"}]},
+  {place:"on the chair", items:[{e:"🧺",n:"basket"}]}
+]},
+{id:"pirate", name:"The pirate ship", emoji:"🏴‍☠️", cells:[
+  {place:"on the captain's chair", items:[{e:"🦆",n:"rubber duck"},{e:"🐒",n:"monkey"}]},
+  {place:"on the deck", items:[{e:"⚓",n:"anchor"},{e:"🔴",n:"red ball",vars:[{e:"🔴",n:"red ball"},{e:"🔵",n:"blue ball"},{e:"🟢",n:"green ball"}]}]},
+  {place:"in the crow's nest", items:[{e:"🔭",n:"telescope"}]},
+  {place:"on the treasure chest", items:[{e:"💎",n:"blue gem",vars:[{e:"💎",n:"blue gem"},{e:"🔶",n:"orange gem"},{e:"🔷",n:"light blue gem"}]},{e:"👑",n:"crown"}]},
+  {place:"on the mast", items:[{e:"🏴",n:"pirate flag"}]},
+  {place:"by the wheel", items:[{e:"🗺️",n:"map"}]},
+  {place:"in the barrel", items:[{e:"🍎",n:"red apple",vars:[{e:"🍎",n:"red apple"},{e:"🍏",n:"green apple"}]}]},
+  {place:"on the plank", items:[{e:"🦜",n:"parrot"}]},
+  {place:"under the stairs", items:[{e:"🐭",n:"mouse"}]},
+  {place:"on the cannon", items:[{e:"💣",n:"cannonball"}]},
+  {place:"in the cabin", items:[{e:"🕯️",n:"candle"}]},
+  {place:"on the rope", items:[{e:"🧭",n:"compass"}]}
+]},
+{id:"space", name:"The space station", emoji:"🚀", cells:[
+  {place:"by the window", items:[{e:"🌍",n:"Earth"}]},
+  {place:"on the control panel", items:[{e:"🖥️",n:"computer"}]},
+  {place:"floating by the door", items:[{e:"🧑‍🚀",n:"astronaut"},{e:"🐱",n:"space cat"}]},
+  {place:"on the shelf", items:[{e:"📕",n:"red book",vars:[{e:"📕",n:"red book"},{e:"📗",n:"green book"},{e:"📘",n:"blue book"}]}]},
+  {place:"in the airlock", items:[{e:"🚀",n:"rocket"}]},
+  {place:"on the table", items:[{e:"🍕",n:"pizza"},{e:"🍩",n:"doughnut"}]},
+  {place:"on the floor", items:[{e:"👾",n:"alien"}]},
+  {place:"by the telescope", items:[{e:"⭐",n:"star"}]},
+  {place:"in the storage pod", items:[{e:"🔴",n:"red ball",vars:[{e:"🔴",n:"red ball"},{e:"🔵",n:"blue ball"},{e:"🟢",n:"green ball"}]}]},
+  {place:"on the bunk", items:[{e:"🧸",n:"teddy"}]},
+  {place:"on the wall", items:[{e:"🛰️",n:"satellite"}]},
+  {place:"by the oxygen tank", items:[{e:"🔦",n:"torch"}]}
+]},
+{id:"garden", name:"The garden", emoji:"🌻", cells:[
+  {place:"on the grass", items:[{e:"🐰",n:"rabbit"},{e:"🐢",n:"turtle"}]},
+  {place:"in the flower bed", items:[{e:"🌹",n:"red rose",vars:[{e:"🌹",n:"red rose"},{e:"🌻",n:"sunflower"},{e:"🌷",n:"pink tulip"}]},{e:"🌻",n:"sunflower"}]},
+  {place:"on the fence", items:[{e:"🐦",n:"bird"}]},
+  {place:"by the pond", items:[{e:"🐸",n:"frog"}]},
+  {place:"on the path", items:[{e:"🐌",n:"snail"}]},
+  {place:"under the tree", items:[{e:"🍎",n:"red apple",vars:[{e:"🍎",n:"red apple"},{e:"🍏",n:"green apple"}]}]},
+  {place:"in the wheelbarrow", items:[{e:"🥕",n:"carrot"}]},
+  {place:"on the bench", items:[{e:"🪣",n:"bucket"}]},
+  {place:"by the gate", items:[{e:"🐶",n:"dog"}]},
+  {place:"on the shed roof", items:[{e:"🐝",n:"bee"}]},
+  {place:"in the sandbox", items:[{e:"🦋",n:"butterfly"}]},
+  {place:"on the swing", items:[{e:"🎈",n:"balloon"}]}
+]},
+{id:"classroom", name:"The classroom", emoji:"🎒", cells:[
+  {place:"on the teacher's desk", items:[{e:"🍎",n:"red apple",vars:[{e:"🍎",n:"red apple"},{e:"🍏",n:"green apple"}]}]},
+  {place:"on the board", items:[{e:"✏️",n:"pencil"},{e:"🖍️",n:"crayon"}]},
+  {place:"on the shelf", items:[{e:"📕",n:"red book",vars:[{e:"📕",n:"red book"},{e:"📗",n:"green book"},{e:"📘",n:"blue book"}]}]},
+  {place:"by the window", items:[{e:"🪴",n:"plant"}]},
+  {place:"on the reading rug", items:[{e:"🧸",n:"teddy"}]},
+  {place:"in the toy corner", items:[{e:"🔴",n:"red ball",vars:[{e:"🔴",n:"red ball"},{e:"🔵",n:"blue ball"},{e:"🟢",n:"green ball"}]}]},
+  {place:"on the art table", items:[{e:"🎨",n:"paint palette"},{e:"✂️",n:"scissors"}]},
+  {place:"by the door", items:[{e:"🎒",n:"backpack"}]},
+  {place:"on the wall", items:[{e:"🕐",n:"clock"}]},
+  {place:"under the desk", items:[{e:"👟",n:"shoe"}]},
+  {place:"in the fish tank", items:[{e:"🐠",n:"fish"}]},
+  {place:"on the lunch table", items:[{e:"🥪",n:"sandwich"}]}
+]}
+];
+
+/* Small things that can sneak into a crowded spot at Level 5. */
+const SMALLS = [
+  {e:"🐭",n:"mouse"},{e:"🐞",n:"ladybird"},{e:"🐜",n:"ant"},
+  {e:"🕷️",n:"spider"},{e:"🐝",n:"bee"},{e:"🦋",n:"butterfly"}
+];
+
+/* Distractor tiles for Levels 4-5: tap all the blue things. */
+const DISTRACTOR_TILES = ["🔵","🟢","🔴","🟡","🟣","🔷","🟠","💙","🟢"];
+
+const LEVELS = {
+  1:{name:"Scene Sleuth", items:6, switches:1, types:["remove"], distractor:false,
+     blurb:"6 things, 1 switch, things only disappear."},
+  2:{name:"Spotter", items:9, switches:1, types:["remove","move"], distractor:false,
+     blurb:"9 things, 1 switch, things disappear or move."},
+  3:{name:"Detective", items:12, switches:2, types:["remove","move","swap"], distractor:false,
+     blurb:"12 things, 2 switches, things disappear, move or swap places."},
+  4:{name:"Memory Master", items:12, switches:2, types:["remove","move","swap","colour"], distractor:true,
+     blurb:"12 things, 2 switches, colours can change too - and a quick distraction first."},
+  5:{name:"Switcheroo Expert", items:12, switches:3, types:["remove","move","swap","colour","add"], distractor:true,
+     blurb:"12 things, 3 switches, and something small can sneak in."}
+};
+const ROUNDS_PER_GAME = 6;
+const UNLOCK_SCORE = 4;
+const MODES = ["Solo","Together","Versus"];
+const STORE_KEY = "switcheroo-progress-v1";
+
+/* ---- helpers ---- */
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function shuffle(a){
+  const r = a.slice();
+  for(let i = r.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = r[i]; r[i] = r[j]; r[j] = t;
+  }
+  return r;
+}
+function pickOne(a){ return a[Math.floor(Math.random() * a.length)]; }
+function itemShown(slot){
+  if(!slot) return null;
+  if(slot.item.vars) return slot.item.vars[slot.variant || 0];
+  return slot.item;
+}
+function slotKey(slot){
+  if(!slot) return "empty";
+  const shown = itemShown(slot);
+  return shown.n + "|" + (slot.added ? slot.added.n : "");
+}
+/* A slot is {cell, item, variant, added}. `slots` is always 12 long. */
+
+/* ---- progress (local storage only) ---- */
+function loadProgress(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw){ const p = JSON.parse(raw); if(p && typeof p.unlocked === "number") return p; }
+  }catch(e){}
+  return {unlocked:1};
+}
+function saveProgress(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(S.progress)); }catch(e){}
+}
+function isUnlocked(l){ return l <= S.progress.unlocked; }
+
+/* ---- state ---- */
+var S = {
+  screen:"home", mode:0, level:1, themePick:6,
+  round:0, rounds:[], score:0, p1score:0, p2score:0,
+  spotter:0, switcherOptions:null, switcherChoice:null,
+  tapped:null, distractorPicked:[], distractorTiles:[],
+  progress:loadProgress(), unlocked:null
+};
+function theme(){ return THEMES[S.themePick === 6 ? S.themeIdx : S.themePick]; }
+function levelDef(){ return LEVELS[S.level]; }
+
+/* ---- round dealing ---- */
+function dealRound(){
+  const t = theme(), L = levelDef();
+  const cellIdx = shuffle([0,1,2,3,4,5,6,7,8,9,10,11]).slice(0, L.items);
+  const slots = new Array(12).fill(null);
+  cellIdx.forEach(function(ci){
+    slots[ci] = {cell:ci, item:pickOne(t.cells[ci].items), variant:0, added:null};
+  });
+  const r = {themeId:t.id, slots:slots, changed:null, switches:[], changedCells:[],
+    picked:null, correct:null, spotted:null, p1pick:null, p1correct:null, p2pick:null, p2correct:null};
+  S.rounds[S.round] = r;
+  return r;
+}
+function freeCells(slots){
+  const free = [];
+  for(let i = 0; i < 12; i++) if(!slots[i]) free.push(i);
+  return free;
+}
+function placedCells(slots, excludeSwitched){
+  const out = [];
+  for(let i = 0; i < 12; i++){
+    if(slots[i] && (!excludeSwitched || !slots[i].switched)) out.push(i);
+  }
+  return out;
+}
+/* Build one switch of a given type against the working slots. Returns the
+   switch object, or null if the type is not feasible right now. */
+function makeSwitch(type, slots){
+  const t = theme();
+  const placed = placedCells(slots, true);
+  if(type === "remove"){
+    if(!placed.length) return null;
+    const cell = pickOne(placed);
+    const it = itemShown(slots[cell]);
+    return {type:"remove", cell:cell, item:it.n, place:t.cells[cell].place,
+      desc:"The " + it.n + " was " + t.cells[cell].place + ". Now it is gone."};
+  }
+  if(type === "move"){
+    const free = freeCells(slots);
+    if(!placed.length || !free.length) return null;
+    const from = pickOne(placed);
+    const to = pickOne(free);
+    const it = itemShown(slots[from]);
+    return {type:"move", cell:from, toCell:to, item:it.n,
+      fromPlace:t.cells[from].place, toPlace:t.cells[to].place,
+      desc:"The " + it.n + " was " + t.cells[from].place + ". Now it is " + t.cells[to].place + "."};
+  }
+  if(type === "swap"){
+    if(placed.length < 2) return null;
+    const two = shuffle(placed).slice(0, 2);
+    const a = itemShown(slots[two[0]]), b = itemShown(slots[two[1]]);
+    /* A swap of two identical-looking items would change nothing. */
+    if(a.n === b.n && a.e === b.e) return null;
+    return {type:"swap", cell:two[0], otherCell:two[1], item:a.n, other:b.n,
+      desc:"The " + a.n + " and the " + b.n + " swapped places."};
+  }
+  if(type === "colour"){
+    const colourable = placed.filter(function(ci){
+      return slots[ci].item.vars && slots[ci].item.vars.length > 1;
+    });
+    if(!colourable.length) return null;
+    const cell = pickOne(colourable);
+    const item = slots[cell].item;
+    const others = item.vars.map(function(v, i){ return i; }).filter(function(i){ return i !== (slots[cell].variant || 0); });
+    const nv = pickOne(others);
+    return {type:"colour", cell:cell, item:itemShown(slots[cell]).n, newName:item.vars[nv].n,
+      newVariant:nv, place:t.cells[cell].place,
+      desc:"The " + itemShown(slots[cell]).n + " is a " + item.vars[nv].n + " now."};
+  }
+  if(type === "add"){
+    if(!placed.length) return null;
+    const cell = pickOne(placed);
+    const small = pickOne(SMALLS);
+    return {type:"add", cell:cell, small:small,
+      desc:"A " + small.n + " appeared " + t.cells[cell].place + "."};
+  }
+  return null;
+}
+/* Apply a switch to the working slots and mark its cells switched. */
+function applySwitch(sw, slots){
+  if(sw.type === "remove"){
+    slots[sw.cell] = null;
+  } else if(sw.type === "move"){
+    const s = slots[sw.cell];
+    slots[sw.cell] = null;
+    slots[sw.toCell] = s;
+    slots[sw.toCell].cell = sw.toCell;
+    slots[sw.toCell].switched = true;
+  } else if(sw.type === "swap"){
+    const a = slots[sw.cell], b = slots[sw.otherCell];
+    slots[sw.cell] = b; slots[sw.otherCell] = a;
+    slots[sw.cell].cell = sw.cell; slots[sw.otherCell].cell = sw.otherCell;
+    slots[sw.cell].switched = true; slots[sw.otherCell].switched = true;
+  } else if(sw.type === "colour"){
+    slots[sw.cell].variant = sw.newVariant;
+    slots[sw.cell].switched = true;
+  } else if(sw.type === "add"){
+    slots[sw.cell].added = sw.small;
+    slots[sw.cell].switched = true;
+  }
+  /* A removal marks nothing: the emptied cell is the change. */
+}
+/* Generate the round's switches. In Together mode the Sneaky Switcher
+   picks the first one from two options; the rest are drawn at random. */
+function generateSwitches(r){
+  const L = levelDef();
+  const working = r.slots.map(function(s){
+    return s ? {cell:s.cell, item:s.item, variant:s.variant || 0, added:null, switched:false} : null;
+  });
+  const switches = [];
+  if(S.mode === 1 && S.switcherChoice){
+    const first = S.switcherChoice;
+    applySwitch(first, working);
+    switches.push(first);
+  }
+  let guard = 0;
+  while(switches.length < L.switches && guard++ < 40){
+    const types = shuffle(L.types.slice());
+    let made = null;
+    for(let i = 0; i < types.length && !made; i++) made = makeSwitch(types[i], working);
+    if(!made) break;
+    applySwitch(made, working);
+    switches.push(made);
+  }
+  /* A removal leaves its cell switched by absence; mark placed cells that
+     were touched so no item is switched twice. */
+  r.switches = switches;
+  r.changed = working;
+  const changedCells = [];
+  for(let i = 0; i < 12; i++){
+    if(slotKey(r.slots[i]) !== slotKey(working[i])) changedCells.push(i);
+  }
+  r.changedCells = changedCells;
+}
+/* Two candidate first-switches for the Sneaky Switcher to choose between.
+   They differ in type or in item, and both are feasible right now. */
+function offerSwitcherOptions(){
+  const L = levelDef();
+  const r = S.rounds[S.round];
+  const working = r.slots.map(function(s){
+    return s ? {cell:s.cell, item:s.item, variant:s.variant || 0, added:null, switched:false} : null;
+  });
+  const options = [];
+  const types = shuffle(L.types.slice());
+  let guard = 0;
+  while(options.length < 2 && guard++ < 40){
+    const type = types[guard % types.length];
+    const sw = makeSwitch(type, working);
+    if(sw && !options.some(function(o){ return o.type === sw.type && o.cell === sw.cell; })) options.push(sw);
+    if(guard > 20 && types.length === 1) break;
+  }
+  S.switcherOptions = options;
+  return options;
+}
+function switchOptionText(sw){
+  if(sw.type === "remove") return "Take the " + sw.item + " away";
+  if(sw.type === "move") return "Move the " + sw.item;
+  if(sw.type === "swap") return "Swap the " + sw.item + " and the " + sw.other;
+  if(sw.type === "colour") return "Change the " + sw.item + "'s colour";
+  if(sw.type === "add") return "Sneak in a " + sw.small.n;
+  return "Change something";
+}
+function spotCorrect(cell){
+  const r = S.rounds[S.round];
+  return r.changedCells.indexOf(cell) >= 0;
+}
+function spottedSwitch(cell){
+  const r = S.rounds[S.round];
+  for(let i = 0; i < r.switches.length; i++){
+    const sw = r.switches[i];
+    const cells = sw.type === "move" ? [sw.cell, sw.toCell]
+      : sw.type === "swap" ? [sw.cell, sw.otherCell] : [sw.cell];
+    if(cells.indexOf(cell) >= 0) return sw;
+  }
+  return r.switches[0] || null;
+}
+function cellDescription(cell){
+  const r = S.rounds[S.round];
+  const t = theme();
+  const slot = r.changed[cell];
+  if(!slot) return "the empty spot " + t.cells[cell].place;
+  const shown = itemShown(slot);
+  return "the " + shown.n + " " + t.cells[cell].place + (slot.added ? " (with a " + slot.added.n + " beside it)" : "");
+}
+
+/* ---- flow ---- */
+function newGame(){
+  S.themeIdx = S.themePick === 6 ? Math.floor(Math.random() * THEMES.length) : S.themePick;
+  S.round = 0; S.rounds = []; S.score = 0; S.p1score = 0; S.p2score = 0;
+  S.spotter = 0; S.switcherOptions = null; S.switcherChoice = null;
+  S.tapped = null; S.unlocked = null;
+  dealRound();
+  S.screen = "study";
+  render();
+}
+function pickMode(i){ S.mode = i; render(); }
+function pickLevel(l){ if(isUnlocked(l)){ S.level = l; render(); } }
+function pickTheme(i){ S.themePick = i; render(); }
+function goHowto(){ S.screen = "howto"; render(); }
+function goHome(){ S.screen = "home"; render(); }
+function startOver(){
+  S.progress = {unlocked:1};
+  saveProgress();
+  S.level = 1;
+  render();
+}
+function readyStudy(){
+  const r = S.rounds[S.round];
+  if(S.mode === 1){
+    /* Together: the Sneaky Switcher picks the first switch. */
+    offerSwitcherOptions();
+    S.screen = "switcher";
+  } else {
+    generateSwitches(r);
+    S.screen = "curtain";
+  }
+  render();
+}
+function pickSwitcherOption(i){
+  const opts = S.switcherOptions || [];
+  if(!opts[i]) return;
+  S.switcherChoice = opts[i];
+  S.switcherOptions = null;
+  generateSwitches(S.rounds[S.round]);
+  S.screen = "curtain";
+  render();
+}
+function goCurtain(){
+  S.screen = levelDef().distractor ? "distractor" : "spot";
+  if(S.screen === "distractor"){
+    S.distractorTiles = shuffle(DISTRACTOR_TILES.slice());
+    S.distractorPicked = [];
+  }
+  render();
+}
+function tapDistractor(i){
+  const p = S.distractorPicked.indexOf(i);
+  if(p >= 0) S.distractorPicked.splice(p, 1);
+  else S.distractorPicked.push(i);
+  render();
+}
+function goSpot(){
+  S.screen = "spot";
+  render();
+}
+function tapCell(i){
+  S.tapped = i;
+  S.screen = "confirm";
+  render();
+}
+function cancelSpot(){
+  S.tapped = null;
+  S.screen = "spot";
+  render();
+}
+function confirmSpot(){
+  const r = S.rounds[S.round];
+  const cell = S.tapped;
+  const ok = spotCorrect(cell);
+  const sw = spottedSwitch(cell);
+  if(S.mode === 2){
+    /* Versus: Player 1 guesses first, then Player 2 on a fresh screen. */
+    if(S.spotter === 0){
+      r.p1pick = cell; r.p1correct = ok; r.spotted = sw;
+      if(ok) S.p1score++;
+      S.spotter = 1;
+      S.tapped = null;
+      S.screen = "versus-pass";
+      render();
+      return;
+    }
+    r.p2pick = cell; r.p2correct = ok;
+    if(ok) S.p2score++;
+    S.tapped = null;
+    S.screen = "reveal";
+    render();
+    return;
+  }
+  r.picked = cell; r.correct = ok; r.spotted = sw;
+  if(ok) S.score++;
+  S.tapped = null;
+  S.screen = "reveal";
+  render();
+}
+function nextRound(){
+  if(S.round + 1 < ROUNDS_PER_GAME){
+    S.round++;
+    /* Together: the spotter alternates each round. Versus: Player 1
+       always guesses first, Player 2 second, every round. */
+    S.spotter = S.mode === 1 ? S.round % 2 : 0;
+    S.switcherChoice = null;
+    dealRound();
+    S.screen = "study";
+  } else {
+    finishGame();
+    S.screen = "result";
+  }
+  render();
+}
+function finishGame(){
+  const best = S.mode === 2 ? Math.max(S.p1score, S.p2score) : S.score;
+  if(best >= UNLOCK_SCORE && S.level === S.progress.unlocked && S.level < 5){
+    S.progress.unlocked = S.level + 1;
+    saveProgress();
+    S.unlocked = S.level + 1;
+  }
+}
+function playAgain(){
+  newGame();
+}
+
+/* ---- rendering ---- */
+var appEl = document.getElementById("app");
+function cellInner(slot){
+  if(!slot) return "";
+  const shown = itemShown(slot);
+  return esc(shown.e) + (slot.added ? '<span class="add">' + esc(slot.added.e) + "</span>" : "");
+}
+function gridStatic(slots, small){
+  let h = '<div class="grid' + (small ? " small" : "") + '">';
+  for(let i = 0; i < 12; i++){
+    const s = slots[i];
+    h += '<div class="cellstatic' + (s ? "" : " emptycell") + '">' + cellInner(s) + "</div>";
+  }
+  return h + "</div>";
+}
+function gridTap(slots){
+  let h = '<div class="grid">';
+  for(let i = 0; i < 12; i++){
+    const s = slots[i];
+    h += '<button class="cell' + (s ? "" : " emptycell") + '" onclick="tapCell(' + i + ')">' + cellInner(s) + "</button>";
+  }
+  return h + "</div>";
+}
+function modeLine(){
+  if(S.mode === 1) return "<p>Player " + (S.spotter + 1) + " is spotting this round - Player " + (2 - S.spotter) + " is the Sneaky Switcher.</p>";
+  if(S.mode === 2) return "<p>Study together - then guess one at a time.</p>";
+  return "";
+}
+function renderHome(){
+  let h = "<h1>Switcheroo!</h1>";
+  h += '<p><span class="tag">Memory and Retention</span></p>';
+  h += "<p><strong>Practice remembering what you saw.</strong></p>";
+  h += '<p class="muted">Study a scene, look away, then spot what changed - from memory. No timers, no streaks, no coins - just looking carefully.</p>';
+  h += '<p><button onclick="goHowto()">How to play</button></p>';
+  h += "<h3>Who is playing?</h3><p>";
+  MODES.forEach(function(m, i){
+    h += '<button class="' + (S.mode === i ? "picked" : "") + '" onclick="pickMode(' + i + ')">' + m + "</button>";
+  });
+  h += "</p>";
+  if(S.mode === 1) h += '<p class="small">Together: study as a pair, take turns spotting, and the other player is the Sneaky Switcher - they pick the change and watch you work it out.</p>';
+  if(S.mode === 2) h += '<p class="small">Versus: study the same scene, guess one at a time, and the better spotter takes the round. No rush, no buzzer - accuracy only.</p>';
+  h += "<h3>Level</h3>";
+  for(let l = 1; l <= 5; l++){
+    const locked = !isUnlocked(l);
+    h += '<div class="card"><p><strong>Level ' + l + " - " + LEVELS[l].name + "</strong> "
+      + (locked ? '<span class="pill locked">Locked</span>' : '<span class="pill on">Open</span>') + "</p>"
+      + '<p class="small muted">' + LEVELS[l].blurb + "</p>"
+      + '<button class="primary" ' + (locked ? "disabled" : "") + ' onclick="pickLevel(' + l + ')">'
+      + (S.level === l ? "Selected - " : "") + "Play " + LEVELS[l].name + "</button></div>";
+  }
+  h += '<p class="small muted">Finish a game with 4 of 6 switches spotted to unlock the next level. Levels never drop - replay any level you have earned.</p>';
+  h += "<h3>Scene</h3><p>";
+  THEMES.forEach(function(t, i){
+    h += '<button class="' + (S.themePick === i ? "picked" : "") + '" onclick="pickTheme(' + i + ')">' + esc(t.emoji) + " " + esc(t.name) + "</button>";
+  });
+  h += '<button class="' + (S.themePick === 6 ? "picked" : "") + '" onclick="pickTheme(6)">🎲 Surprise me</button></p>';
+  h += '<p><button class="primary" onclick="newGame()">Start game</button></p>';
+  h += '<p class="small muted">Levels unlocked: ' + S.progress.unlocked + ' of 5. Your progress lives only in this browser.</p>';
+  h += '<p><button onclick="startOver()">Start over</button> <span class="small muted">Clears your unlocked levels.</span></p>';
+  return h;
+}
+function renderHowto(){
+  let h = "<h2>How to play</h2>";
+  h += '<div class="card"><p><strong>👀 1. Study the scene.</strong><br>Look at the scene for as long as you like. There is no rush - rushing is not a skill this game rewards.</p></div>';
+  h += '<div class="card"><p><strong>🙈 2. Look away.</strong><br>The scene slides behind a curtain while the sneaky switcher is at work. At higher levels there is a quick distraction first - tap all the blue things, then carry on.</p></div>';
+  h += '<div class="card"><p><strong>🔍 3. Spot the switch.</strong><br>The scene comes back, changed. Tap the thing you think changed - one tap only. Tapping asks first, so a slip of the finger is not an answer.</p></div>';
+  h += '<div class="card"><p><strong>🎉 4. See what changed.</strong><br>The game shows the scene before and after, side by side, so a miss becomes a look-again moment. Six rounds a game, about five to eight minutes.</p></div>';
+  h += '<p class="small">Together mode: the non-spotter is the Sneaky Switcher and picks the change. Versus mode: both study, then guess one at a time - the second player cannot copy the first.</p>';
+  h += '<p><button class="primary" onclick="goHome()">Back</button></p>';
+  return h;
+}
+function renderStudy(){
+  const r = S.rounds[S.round];
+  let h = "<h2>" + esc(theme().emoji) + " " + esc(theme().name) + "</h2>";
+  h += '<p class="progress">Round ' + (S.round + 1) + " of " + ROUNDS_PER_GAME + " - Level " + S.level + " " + LEVELS[S.level].name + "</p>";
+  h += modeLine();
+  h += "<p>Study the scene. Look as long as you like.</p>";
+  h += gridStatic(r.slots, false);
+  h += '<p><button class="primary" onclick="readyStudy()">I\'m ready</button></p>';
+  return h;
+}
+function renderSwitcher(){
+  const opts = S.switcherOptions || [];
+  let h = "<h2>Sneaky Switcher</h2>";
+  h += "<p>Player " + (2 - S.spotter) + ", you are the Sneaky Switcher this round. Pick one change - Player " + (S.spotter + 1) + " will have to spot it.</p>";
+  opts.forEach(function(sw, i){
+    h += '<button class="opt" onclick="pickSwitcherOption(' + i + ')">' + esc(switchOptionText(sw)) + "</button>";
+  });
+  h += '<p class="small muted">Player ' + (S.spotter + 1) + ", look away for a moment.</p>";
+  return h;
+}
+function renderCurtain(){
+  let h = '<div class="banner"><h2>The sneaky switcher is at work...</h2>';
+  h += "<p>Something in the scene just changed. Can you remember what was where?</p></div>";
+  if(levelDef().distractor) h += '<p><button class="primary" onclick="goCurtain()">Ready</button></p>';
+  else h += '<p><button class="primary" onclick="goCurtain()">Spot it!</button></p>';
+  return h;
+}
+function renderDistractor(){
+  let h = "<h2>A quick distraction</h2>";
+  h += "<p>Tap all the blue things. Take your time - this is just a distraction, not a test.</p>";
+  h += '<div class="tray">';
+  S.distractorTiles.forEach(function(tile, i){
+    h += '<button class="tile' + (S.distractorPicked.indexOf(i) >= 0 ? " picked" : "") + '" onclick="tapDistractor(' + i + ')">' + esc(tile) + "</button>";
+  });
+  h += "</div>";
+  h += '<p><button class="primary" onclick="goSpot()">Spot it!</button></p>';
+  return h;
+}
+function renderSpot(){
+  const r = S.rounds[S.round];
+  let h = "<h2>Spot the switch</h2>";
+  h += '<p class="progress">Round ' + (S.round + 1) + " of " + ROUNDS_PER_GAME + "</p>";
+  if(S.mode === 2) h += "<p>Player " + (S.spotter + 1) + ", your turn to spot.</p>";
+  else if(S.mode === 1) h += "<p>Player " + (S.spotter + 1) + ", spot the switch.</p>";
+  h += "<p>Tap the thing you think changed. One tap only - tapping asks first, so a slip of the finger is not an answer.</p>";
+  h += gridTap(r.changed);
+  return h;
+}
+function renderConfirm(){
+  const r = S.rounds[S.round];
+  let h = "<h2>Is this the switch?</h2>";
+  h += "<p>You tapped " + esc(cellDescription(S.tapped)) + ".</p>";
+  h += '<p><button class="primary" onclick="confirmSpot()">Yes, that\'s it</button>';
+  h += '<button onclick="cancelSpot()">No, let me look again</button></p>';
+  return h;
+}
+function renderVersusPass(){
+  let h = "<h2>Player 1 has guessed</h2>";
+  h += "<p>Player 2 - your turn. Player 1, look away!</p>";
+  h += '<p><button class="primary" onclick="goSpot()">Player 2, spot the switch</button></p>';
+  return h;
+}
+function renderReveal(){
+  const r = S.rounds[S.round];
+  let h = "<h2>What changed</h2>";
+  if(S.mode === 2){
+    h += "<p>Player 1 " + (r.p1correct ? "spotted it!" : "missed this one.") + " Player 2 " + (r.p2correct ? "spotted it!" : "missed this one.") + "</p>";
+    h += '<p class="score">Player 1: ' + S.p1score + " - Player 2: " + S.p2score + "</p>";
+  } else {
+    if(r.correct) h += '<div class="why"><strong>You got it!</strong> ' + esc(r.spotted ? r.spotted.desc : "") + "</div>";
+    else h += '<div class="gentle"><strong>So close</strong> - ' + esc(r.switches[0] ? r.switches[0].desc : "") + "</div>";
+    h += '<p class="score">You have spotted ' + S.score + " of " + (S.round + 1) + " switches so far.</p>";
+  }
+  if(r.switches.length > 1){
+    h += "<h3>Everything that changed</h3><ul>";
+    r.switches.forEach(function(sw){ h += "<li>" + esc(sw.desc) + "</li>"; });
+    h += "</ul>";
+  }
+  h += "<h3>Before and after</h3>";
+  h += '<div class="row"><div style="flex:1;min-width:200px"><p class="small muted">Before</p>' + gridStatic(r.slots, true) + "</div>";
+  h += '<div style="flex:1;min-width:200px"><p class="small muted">After</p>' + gridStatic(r.changed, true) + "</div></div>";
+  if(S.round + 1 < ROUNDS_PER_GAME) h += '<p><button class="primary" onclick="nextRound()">Next round</button></p>';
+  else h += '<p><button class="primary" onclick="nextRound()">See results</button></p>';
+  return h;
+}
+function renderResult(){
+  const missed = [];
+  S.rounds.forEach(function(r, i){
+    const ok = S.mode === 2 ? (r.p1correct || r.p2correct) : r.correct;
+    if(!ok) missed.push({round:i + 1, switches:r.switches});
+  });
+  let h = "<h2>Results</h2>";
+  if(S.mode === 2){
+    h += '<p class="score">Player 1: ' + S.p1score + " - Player 2: " + S.p2score + "</p>";
+    if(S.p1score > S.p2score) h += "<p><strong>Player 1 takes it this time - rematch?</strong></p>";
+    else if(S.p2score > S.p1score) h += "<p><strong>Player 2 takes it this time - rematch?</strong></p>";
+    else h += "<p><strong>Too close to call - honours shared.</strong></p>";
+  } else {
+    h += '<p class="score">You spotted ' + S.score + " of " + ROUNDS_PER_GAME + " sneaky switches!</p>";
+    if(S.score <= 2) h += '<p><strong>Tricky switches this time - the cat fooled us both!</strong></p>';
+  }
+  if(missed.length){
+    h += "<h3>The ones that got away</h3><ul>";
+    missed.forEach(function(m){
+      h += "<li>Round " + m.round + " - " + m.switches.map(function(sw){ return esc(sw.desc); }).join(" ") + "</li>";
+    });
+    h += "</ul>";
+  }
+  if(S.unlocked) h += '<div class="why"><strong>New level unlocked: ' + LEVELS[S.unlocked].name + '!</strong><br>Finish a game with 4 of 6 switches spotted at the next level to open the one after. Levels never drop.</div>';
+  else if(S.level < 5) h += '<p class="small muted">Towards ' + LEVELS[S.level + 1].name + ": finish a game with 4 of 6 switches spotted to unlock it. Levels never drop - keep playing.</p>";
+  h += '<p><button class="primary" onclick="playAgain()">' + (S.mode === 2 ? "Rematch" : "Play again") + "</button>";
+  h += '<button onclick="goHome()">Change level / scene</button></p>';
+  h += '<p class="small muted">A new game deals a fresh scene. Replay a level any time.</p>';
+  return h;
+}
+function render(){
+  let h = "";
+  if(S.screen === "home") h = renderHome();
+  else if(S.screen === "howto") h = renderHowto();
+  else if(S.screen === "study") h = renderStudy();
+  else if(S.screen === "switcher") h = renderSwitcher();
+  else if(S.screen === "curtain") h = renderCurtain();
+  else if(S.screen === "distractor") h = renderDistractor();
+  else if(S.screen === "spot") h = renderSpot();
+  else if(S.screen === "confirm") h = renderConfirm();
+  else if(S.screen === "versus-pass") h = renderVersusPass();
+  else if(S.screen === "reveal") h = renderReveal();
+  else if(S.screen === "result") h = renderResult();
+  appEl.innerHTML = h;
+}
+render();
+
+/* ---- node harness hook ---- */
+if(typeof module !== "undefined" && module.exports){
+  module.exports = {THEMES: THEMES, SMALLS: SMALLS, LEVELS: LEVELS, MODES: MODES,
+    DISTRACTOR_TILES: DISTRACTOR_TILES, ROUNDS_PER_GAME: ROUNDS_PER_GAME,
+    shuffle: shuffle, slotKey: slotKey, itemShown: itemShown,
+    dealRound: dealRound, generateSwitches: generateSwitches,
+    offerSwitcherOptions: offerSwitcherOptions,
+    newGame: newGame, pickMode: pickMode, pickLevel: pickLevel, pickTheme: pickTheme,
+    goHowto: goHowto, goHome: goHome, startOver: startOver,
+    readyStudy: readyStudy, pickSwitcherOption: pickSwitcherOption,
+    goCurtain: goCurtain, tapDistractor: tapDistractor, goSpot: goSpot,
+    tapCell: tapCell, cancelSpot: cancelSpot, confirmSpot: confirmSpot,
+    nextRound: nextRound, playAgain: playAgain, isUnlocked: isUnlocked,
+    switchOptionText: switchOptionText, getS: function(){ return S; }};
+}
+</script>
+</body>
+</html>
