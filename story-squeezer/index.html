@@ -1133,6 +1133,16 @@ function toggleKeeper(w){
   else if(list.length < 5) list.push(w);
   render();
 }
+/* Index-based wrappers for the rendered buttons: passing the text through
+   JSON.stringify inside a double-quoted onclick attribute truncated the
+   handler at the first inner quote, so no squeeze-step click ever ran
+   (issue #48). An index needs no quoting at all. */
+function pickHeadlineIdx(i){
+  pickHeadline(S.headOrder[i].text);
+}
+function toggleKeeperIdx(i){
+  toggleKeeper(S.trayOrder[i]);
+}
 function squeezeReady(){
   if(S.screen === "squeeze") return S.headPick !== null && S.keepPick.length === 5;
   if(S.screen === "squeezeB") return S.headPickB !== null && S.keepPickB.length === 5;
@@ -1310,13 +1320,13 @@ function squeezeHtml(who){
     + '<details><summary>Show the story again</summary><div class="storytext">' + t.chunks.map(esc).join("</div><div class=\"storytext\">") + '</div></details>'
     + '<div class="card"><h3>Pick the headline</h3>'
     + '<p class="small muted">Which one says what the whole story is mostly about?</p>';
-  heads.forEach(function(hd){
-    h += '<button class="opt ' + (headPick === hd.text ? 'picked' : '') + '" onclick="pickHeadline(' + JSON.stringify(hd.text) + ')">' + esc(hd.text) + '</button>';
+  heads.forEach(function(hd, i){
+    h += '<button class="opt ' + (headPick === hd.text ? 'picked' : '') + '" onclick="pickHeadlineIdx(' + i + ')">' + esc(hd.text) + '</button>';
   });
   h += '</div><div class="card"><h3>Keep 5 words</h3>'
     + '<p class="small muted">Tap 5 words from the tray - the ones the story could not do without. ' + keepPick.length + ' of 5 kept.</p><div class="tray">';
-  tray.forEach(function(w){
-    h += '<button class="tile ' + (keepPick.indexOf(w) >= 0 ? 'picked' : '') + '" onclick="toggleKeeper(' + JSON.stringify(w) + ')">' + esc(w) + '</button>';
+  tray.forEach(function(w, i){
+    h += '<button class="tile ' + (keepPick.indexOf(w) >= 0 ? 'picked' : '') + '" onclick="toggleKeeperIdx(' + i + ')">' + esc(w) + '</button>';
   });
   h += '</div><button class="primary" ' + (squeezeReady() ? '' : 'disabled') + ' onclick="checkSqueeze()">Check my squeeze</button></div>';
   return h;
@@ -1403,6 +1413,7 @@ if(typeof module !== "undefined" && module.exports){
     keepScore: keepScore, words: words, fullText: fullText, poolFor: poolFor, shuffle: shuffle,
     newGame: newGame, pickPrediction: pickPrediction, goChunks: goChunks, chunkStep: chunkStep,
     goSqueeze: goSqueeze, pickHeadline: pickHeadline, toggleKeeper: toggleKeeper,
+    pickHeadlineIdx: pickHeadlineIdx, toggleKeeperIdx: toggleKeeperIdx,
     squeezeReady: squeezeReady, checkSqueeze: checkSqueeze, goSqueezeB: goSqueezeB,
     nextRound: nextRound, playAgain: playAgain, goHome: goHome, startLevel: startLevel,
     pickMode: pickMode, qualifyingGames: qualifyingGames, isUnlocked: isUnlocked, bestFor: bestFor,
