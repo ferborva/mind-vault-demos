@@ -41,6 +41,11 @@ h1 .m{color:#ff2e88}
 var POOL=['\u{1F436}','\u{1F431}','\u{1F98A}','\u{1F981}','\u{1F438}','\u{1F435}','\u{1F984}','\u{1F433}','\u{1F355}','\u{1F369}','\u{1F353}','\u{1F680}','\u{1F388}','\u26BD','\u{1F3B8}','\u{1F308}','\u{1F366}','\u{1F98B}'];
 var LEVELS=[6,8,10,12];
 var level=1, deck=[], first=-1, lock=false, flips=0, found=0, cards=[];
+var BEST_KEY='memojiBestFlips';
+function loadBests(){try{var b=JSON.parse(localStorage.getItem(BEST_KEY)||'{}');if(b&&typeof b==='object'){var out={};for(var k in b){var lv=parseInt(k,10);var v=parseInt(b[k],10);if(lv>=1&&lv<=LEVELS.length&&v>0)out[lv]=v;}return out;}}catch(e){}return {};}
+function getBest(lv){var b=loadBests();return b[lv]||null;}
+function saveBest(lv,f){try{var b=loadBests();if(!b[lv]||f<b[lv]){b[lv]=f;localStorage.setItem(BEST_KEY,JSON.stringify(b));return true;}}catch(e){}return false;}
+function lvlText(){var t='Level '+level+' - '+pairs()+' pairs';var best=getBest(level);if(best)t+=' - Best: '+best+' flips';return t;}
 function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function pairs(){return LEVELS[level-1];}
 function newGame(lv){
@@ -64,7 +69,7 @@ function newGame(lv){
     cards.push(b);
   });
   document.getElementById('end').innerHTML='';
-  document.getElementById('lvl').textContent='Level '+level+' - '+n+' pairs';
+  document.getElementById('lvl').textContent=lvlText();
   stat();
 }
 function stat(){document.getElementById('stat').textContent='Pairs found: '+found+' of '+pairs()+' - Flips: '+flips;}
@@ -94,7 +99,9 @@ function flip(i){
 }
 function win(){
   var n=pairs();
-  var html='<p style="font-size:22px;font-weight:800;margin:18px 0 4px">Level '+level+' complete!</p><p class="muted" style="margin-top:0">You found all '+n+' pairs in '+flips+' flips.</p>';
+  var isBest=saveBest(level,flips);
+  document.getElementById('lvl').textContent=lvlText();
+  var html='<p style="font-size:22px;font-weight:800;margin:18px 0 4px">Level '+level+' complete!</p><p class="muted" style="margin-top:0">You found all '+n+' pairs in '+flips+' flips.'+(isBest?' New best for this level!':'')+'</p>';
   if(level<LEVELS.length){
     html+='<button class="btn" onclick="newGame('+(level+1)+')">Next level - '+LEVELS[level]+' pairs</button>';
     html+='<button class="btn calm" onclick="newGame('+level+')">Replay this level</button>';
