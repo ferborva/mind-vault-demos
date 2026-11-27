@@ -661,6 +661,10 @@ function cancelSpot(){
   render();
 }
 function confirmSpot(){
+  /* A second confirm after the round is already resolved is a no-op.
+     The button is gone by then, but a double tap (or a driver calling
+     it twice) must not re-score the round or skip a turn. */
+  if(S.screen !== "confirm" || S.tapped === null) return;
   const r = S.rounds[S.round];
   const cell = S.tapped;
   const ok = spotCorrect(cell);
