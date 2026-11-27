@@ -76,6 +76,16 @@ you tap.
 
 **▶️ [Play it](https://ferborva.github.io/mind-vault-demos/ripple-town/)**
 
+## Headline Duel
+
+Practise spotting the main idea of a short passage - and the sentence that
+does not belong. Read together, then duel head to head on one phone: answer
+in secret, pass it over, and see both answers side by side in the reveal.
+Six rounds a duel, about five to eight minutes. Three levels, trickier
+passages as you both show you can spot the main idea. A tie goes to one
+sudden-death round.
+
+**▶️ [Play it](https://ferborva.github.io/mind-vault-demos/headline-duel/)**
 
 ---
 

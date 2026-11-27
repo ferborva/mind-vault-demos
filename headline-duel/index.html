@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Headline Duel - practise spotting the main idea</title>
+<style>
+  :root{
+    --blue:#2456e6; --yellow:#ffd400; --lime:#7dff2e; --pink:#ff2e88;
+    --cyan:#00d4ff; --orange:#ff6b00; --ink:#141414; --paper:#fffbe8;
+    --white:#ffffff; --muted:#4a4a4a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    background-image:radial-gradient(#14141414 1.5px, transparent 1.5px);
+    background-size:22px 22px;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:18px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  body::before{content:"";display:block;height:12px;
+    background:repeating-linear-gradient(45deg,var(--blue) 0 16px,var(--yellow) 16px 32px,var(--pink) 32px 48px,var(--cyan) 48px 64px,var(--lime) 64px 80px)}
+  #app{max-width:640px;margin:0 auto;padding:20px 16px 64px;position:relative}
+  h1{font-family:"Arial Black",system-ui,sans-serif;display:inline-block;
+    font-size:42px;line-height:1.02;font-weight:900;text-transform:uppercase;
+    letter-spacing:-.01em;margin:6px 0 8px;background:var(--yellow);
+    padding:10px 16px;border:3px solid var(--ink);border-radius:14px;
+    box-shadow:6px 6px 0 var(--ink);transform:rotate(-1.5deg)}
+  h2{font-family:"Arial Black",system-ui,sans-serif;font-size:26px;font-weight:900;
+    text-transform:uppercase;letter-spacing:.01em;margin:8px 0 10px}
+  h2::before{content:"";display:block;width:64px;height:8px;background:var(--blue);
+    border:2px solid var(--ink);border-radius:99px;margin-bottom:8px;transform:rotate(-1deg)}
+  h3{font-family:"Arial Black",system-ui,sans-serif;font-size:17px;font-weight:900;
+    text-transform:uppercase;letter-spacing:.06em;margin:20px 0 8px}
+  p{margin:10px 0}
+  .tag{display:inline-block;background:var(--blue);color:#fff;
+    border:3px solid var(--ink);border-radius:999px;padding:6px 14px;
+    font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;
+    font-family:system-ui,sans-serif;box-shadow:3px 3px 0 var(--ink);
+    transform:rotate(1.5deg)}
+  .muted{color:var(--muted)}
+  .small{font-size:15px}
+  .card{background:var(--white);border:3px solid var(--ink);border-radius:16px;
+    padding:18px;margin:14px 0;box-shadow:6px 6px 0 var(--ink)}
+  .passage{background:var(--white);border:3px solid var(--ink);border-radius:16px;
+    padding:20px;margin:14px 0;box-shadow:6px 6px 0 var(--ink);font-size:19px;line-height:1.65}
+  .passage p{margin:0 0 12px}
+  .passage p:last-child{margin-bottom:0}
+  button{font-family:system-ui,sans-serif;font-size:17px;font-weight:800;min-height:48px;
+    border-radius:12px;border:3px solid var(--ink);background:var(--white);
+    color:var(--ink);padding:10px 16px;margin:6px 6px 6px 0;cursor:pointer;
+    text-align:left;line-height:1.35;box-shadow:4px 4px 0 var(--ink)}
+  button:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+  button.primary{background:var(--blue);color:#fff;font-weight:900;text-align:center;
+    text-transform:uppercase;letter-spacing:.03em}
+  button.primary:disabled{background:#b9c9c4;color:var(--ink);border-color:var(--ink);cursor:default;
+    box-shadow:4px 4px 0 var(--ink);transform:none}
+  button:disabled{opacity:.55;cursor:default}
+  button.picked{background:var(--yellow);border-color:var(--ink);
+    box-shadow:6px 6px 0 var(--ink);transform:translate(-2px,-2px) rotate(-1deg)}
+  button.correct{background:var(--lime);border-color:var(--ink)}
+  button.dim{opacity:.75}
+  .opt{display:block;width:100%}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pill{display:inline-block;border:3px solid var(--ink);border-radius:999px;
+    padding:4px 12px;font-size:13px;font-weight:900;text-transform:uppercase;
+    letter-spacing:.05em;font-family:system-ui,sans-serif;background:var(--white)}
+  .pill.on{background:var(--lime);color:var(--ink);border-color:var(--ink)}
+  .score{display:inline-block;font-size:21px;font-weight:900;background:var(--yellow);
+    border:3px solid var(--ink);border-radius:12px;padding:8px 14px;
+    box-shadow:4px 4px 0 var(--ink);transform:rotate(-1deg)}
+  .why{background:var(--lime);border:3px solid var(--ink);border-radius:12px;
+    padding:12px 16px;margin:12px 0;box-shadow:4px 4px 0 var(--ink)}
+  .gentle{background:#ffe1c2;border:3px solid var(--ink);border-radius:12px;
+    padding:12px 16px;margin:12px 0;box-shadow:4px 4px 0 var(--ink)}
+  .versus{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
+  .versus .side{flex:1 1 220px;background:var(--white);border:3px solid var(--ink);
+    border-radius:16px;padding:14px;box-shadow:4px 4px 0 var(--ink)}
+  .versus .side h3{margin-top:0}
+  .lookaway{background:var(--ink);color:var(--paper);border:3px solid var(--ink);
+    border-radius:16px;padding:18px;margin:14px 0;box-shadow:6px 6px 0 var(--pink)}
+  .lookaway h2{color:var(--paper)}
+  .lookaway h2::before{background:var(--pink)}
+  .tick{font-weight:900;color:#0a7a1e}
+  .banner{background:var(--pink);color:#fff;border:3px solid var(--ink);
+    border-radius:12px;padding:12px 16px;margin:12px 0;box-shadow:4px 4px 0 var(--ink);
+    font-weight:800}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+/* Headline Duel - Week 1 game 4, Mind Vault. Reading Efficiency.
+   Practise spotting the main idea of a short passage, and the sentence
+   that does not belong. Two players, one phone, pass and play.
+   Accuracy only, never speed. No timers, no streaks, no coins, no shop,
+   no daily bonus. Losing a duel means they read it better this round. */
+
+/* __BANK_START__ */
+/* 30-passage bank: 15 Main Idea + 15 Intruder, 10 per level.
+   Written by three level writers, verified by verify-bank.js
+   (1,609 checks) and read end to end for trap fairness. */
+const BANK_L1 = [
+  // hd1mi01 - 76 words
+  {id:"hd1mi01", type:"main", level:1, topic:"animals", passage:"Wombats are champion diggers, and their burrows are the secret to their survival in the Australian bush. With powerful claws and sturdy bodies, they can shift soil fast, carving tunnels that stretch for many metres underground. These cool, dark burrows shelter wombats from scorching heat, bushfires and hungry dingoes. A single burrow system can have several entrances and rooms for sleeping. Wombats even have tough, flat backsides that can block a tunnel entrance like a door.", options:[{t:"Wombats have tough, flat backsides that can block a tunnel entrance.", kind:"detail"},{t:"Wombats survive in the bush because they dig long, protective burrows.", kind:"correct"},{t:"Wombats dig burrows mainly to trap dingoes inside them.", kind:"twist"},{t:"Australian animals have clever ways of surviving in the bush.", kind:"broad"}], why:"The passage is mainly about how wombats dig burrows that protect them from heat, fire and predators."},
+  // hd1mi02 - 78 words
+  {id:"hd1mi02", type:"main", level:1, topic:"space", passage:"Saturn's rings are the most famous sight in our solar system, and they are stranger than they look. The rings are not solid bands at all, but millions of chunks of ice and rock, some as small as grains of sand and others as big as houses. These pieces orbit Saturn at speed, held in place by gravity and by shepherd moons. From a distance the rings look golden, yet up close they are a busy, glittering swarm.", options:[{t:"Saturn's rings are solid golden bands that never change.", kind:"twist"},{t:"Planets in our solar system have many strange and beautiful features.", kind:"broad"},{t:"Tiny shepherd moons help hold Saturn's rings in place.", kind:"detail"},{t:"Saturn's rings are made of millions of orbiting chunks of ice and rock that only look like solid golden bands.", kind:"correct"}], why:"The passage is mainly about what Saturn's rings are really made of and why they look solid from far away."},
+  // hd1mi03 - 78 words
+  {id:"hd1mi03", type:"main", level:1, topic:"sport", passage:"Surfing looks like pure fun, but riding a wave well takes balance, timing and plenty of practice. A surfer must first paddle hard to match the speed of the approaching wave, then pop up quickly onto the board without wobbling. Once standing, the surfer steers by shifting weight and watching how the wave curls and breaks. Falling off is part of learning, and even champions wipe out often. With patience, most beginners can soon ride a small wave.", options:[{t:"Water sports are a fun way to keep fit and enjoy the outdoors.", kind:"broad"},{t:"A surfer steers by shifting weight and watching how the wave curls.", kind:"detail"},{t:"Surfing well takes balance, timing and practice, from paddling and popping up to steering on the wave.", kind:"correct"},{t:"Surfing is mostly about avoiding falling off, and even champions never wipe out.", kind:"twist"}], why:"The passage is mainly about the balance, timing and practice needed to surf a wave well."},
+  // hd1mi04 - 78 words
+  {id:"hd1mi04", type:"main", level:1, topic:"food", passage:"Popcorn is the only type of corn that pops, and the secret is the tiny drop of water hidden inside each kernel. When a kernel is heated, the water turns to steam and the pressure builds until the hard shell can no longer hold it. The kernel bursts open with a pop, and the soft, starchy inside flips inside out into a fluffy white puff. Once popped, the corn is light, crunchy and ready for butter or salt.", options:[{t:"Popcorn pops because the hard shell soaks up water until it bursts.", kind:"twist"},{t:"Popcorn pops because heated water inside each kernel turns to steam until the shell bursts open.", kind:"correct"},{t:"Corn is a popular food that people enjoy in many different forms.", kind:"broad"},{t:"The soft inside of a popcorn kernel flips inside out into a fluffy white puff.", kind:"detail"}], why:"The passage is mainly about how the water inside a popcorn kernel turns to steam and makes it pop."},
+  // hd1mi05 - 76 words
+  {id:"hd1mi05", type:"main", level:1, topic:"games", passage:"Chess is a game of planning ahead, and every move matters because one small mistake can change the whole board. Each player starts with sixteen pieces, and each piece moves in its own special way, from pawns stepping forward to queens sweeping across rows. Good players think several moves ahead, guessing what their opponent might do next and setting clever traps. A game can end in checkmate, a draw, or a win by one smart move.", options:[{t:"Each player starts with sixteen pieces.", kind:"detail"},{t:"Board games are a great way to spend time with friends and family.", kind:"broad"},{t:"In chess, the best plan is to move quickly without thinking about your opponent.", kind:"twist"},{t:"Chess is a game of planning ahead, where each piece moves differently and one small mistake can change the game.", kind:"correct"}], why:"The passage is mainly about how chess rewards planning ahead and thinking several moves into the future."},
+  // hd1in01 - 80 words, intruder at index 2
+  {id:"hd1in01", type:"intruder", level:1, topic:"weird history", sentences:["In 1932, the Australian government sent soldiers to deal with emus trampling wheat farms in Western Australia.","The soldiers arrived with machine guns, expecting an easy victory over the flightless birds.","Meanwhile, the price of wheat in London rose sharply because of a dry summer in Canada.","Instead, the emus scattered in small groups, dodged the gunfire and kept coming back to the crops.","The operation was such a flop that people joke about the emus winning the Emu War."], intruder:2, why:"The sentence about wheat prices in London has nothing to do with the soldiers, the emus or the operation in Western Australia."},
+  // hd1in02 - 80 words, intruder at index 4
+  {id:"hd1in02", type:"intruder", level:1, topic:"how things work", sentences:["A fridge keeps food cold by moving heat out of the cabinet, not by making cold.","A special liquid called refrigerant flows through pipes, soaking up heat from inside the fridge.","The refrigerant is then squeezed by a compressor, which makes it hot enough to release that heat outside.","A fan blows air across the coils at the back so the heat drifts away into the room.","Many families keep a shopping list on the fridge door with a magnet."], intruder:4, why:"The sentence about a shopping list on the fridge door is about how families use a fridge, not how a fridge moves heat to keep food cold."},
+  // hd1in03 - 79 words, intruder at index 1
+  {id:"hd1in03", type:"intruder", level:1, topic:"animals", sentences:["An octopus has three hearts, and two of them pump blood to its gills.","In 1870, a famous novel described a giant squid attacking a submarine.","It can also change colour and texture in a blink, matching rocks, sand or coral to hide from predators.","With no bones at all, an octopus can squeeze through a gap as small as a marble.","Each of its eight arms can taste what it touches, helping it find crabs hidden under rocks."], intruder:1, why:"The sentence about a novel and a giant squid is about fiction and a different animal, not about the real octopus and its amazing body."},
+  // hd1in04 - 80 words, intruder at index 3
+  {id:"hd1in04", type:"intruder", level:1, topic:"space", sentences:["Robot rovers explore Mars because the planet is too cold and distant for astronauts to visit easily.","Each rover carries cameras, drills and science labs, sending photos and data back to Earth.","The rovers drive slowly across dusty plains, climbing over rocks and steering around craters.","Astronauts on the International Space Station grow lettuce in a small garden to test space farming.","When a rover finds a rock, scientists on Earth can tell it to stop and take a look."], intruder:3, why:"The sentence about astronauts growing lettuce on the space station is about life in orbit, not about robot rovers exploring Mars."},
+  // hd1in05 - 79 words, intruder at index 0
+  {id:"hd1in05", type:"intruder", level:1, topic:"food", sentences:["Chocolate is the favourite flavour of ice cream in many countries.","To make chocolate, makers first roast cocoa beans to bring out their rich flavour.","The roasted beans are ground into a thick paste called cocoa liquor, which is not a drink at all.","Sugar, milk and cocoa butter are mixed in, then the mixture is stirred for hours until it turns smooth.","Finally, the warm chocolate is poured into moulds and cooled until it sets into shiny bars."], intruder:0, why:"The sentence about chocolate ice cream is about a popular flavour, not about the steps that turn cocoa beans into chocolate bars."},
+];
+
+/*
+Word counts and checks:
+- hd1mi01: 76 words - kinds present: correct, detail, broad, twist
+- hd1mi02: 78 words - kinds present: correct, detail, broad, twist
+- hd1mi03: 78 words - kinds present: correct, detail, broad, twist
+- hd1mi04: 78 words - kinds present: correct, detail, broad, twist
+- hd1mi05: 76 words - kinds present: correct, detail, broad, twist
+- hd1in01: 80 words - intruder index 2
+- hd1in02: 80 words - intruder index 4
+- hd1in03: 79 words - intruder index 1
+- hd1in04: 80 words - intruder index 3
+- hd1in05: 79 words - intruder index 0
+*/
+
+const BANK_L2 = [
+  // hd2mi01: 139 words
+  {id:"hd2mi01", type:"main", level:2, topic:"weird history", passage:"In January 1919, a giant tank in Boston burst open and released a wave of sticky molasses nearly five metres high. The thick, sweet flood rushed through the streets at about fifty five kilometres an hour, knocking over buildings, lifting a train off its tracks and trapping people and horses. Molasses is much heavier than water, so it was almost impossible to wade through, and rescuers struggled to reach anyone caught in it. The flood left the streets coated in a sweet, brown layer that stuck to shoes and wheels for weeks, and the smell of molasses lingered in the city for years. Twenty one people lost their lives that day, and Boston had to clean up millions of litres of sticky syrup. It remains one of the strangest floods in history, and it was not water at all.", options:[{t:"The flood knocked over buildings and lifted a train off its tracks.", kind:"detail"},{t:"A wave of water flooded Boston and people easily waded through it.", kind:"twist"},{t:"A sticky wave of molasses flooded Boston in 1919, sweeping through streets and trapping people, and it was almost impossible to escape.", kind:"correct"},{t:"Floods can be dangerous and cause a lot of damage to cities.", kind:"broad"}], why:"The main idea is that a wave of sticky molasses flooded Boston in 1919, and its weight made it almost impossible to escape."},
+  // hd2mi02: 128 words
+  {id:"hd2mi02", type:"main", level:2, topic:"how things work", passage:"A lock and a key work together like a puzzle that only one piece can solve. Inside the lock sit a row of tiny pins, stacked in pairs and pushed down by small springs. When a different key slides in, the pins sit at different heights, so the lock stays jammed and the bolt cannot move. But the right key has ridges cut to just the right heights, and each ridge lifts one pair of pins to exactly the line where the lock can turn. Once every pin lines up, the cylinder spins freely and the bolt slides back. That is why a copied key with one ridge too short will not turn the lock at all, even if it looks almost the same as the real one.", options:[{t:"Locks and keys have kept people's homes safe for hundreds of years.", kind:"broad"},{t:"A lock opens only when the right key lifts all its pins to exactly the right line.", kind:"correct"},{t:"Inside a lock, small springs push pairs of tiny pins down into place.", kind:"detail"},{t:"When the right key slides in, the pins sit at different heights and the lock stays jammed.", kind:"twist"}], why:"The main idea is that a lock opens only when the right key lifts every pin to exactly the right line."},
+  // hd2mi03: 128 words
+  {id:"hd2mi03", type:"main", level:2, topic:"animals", passage:"An axolotl is a small salamander that can regrow parts of its body, including its legs, tail, and even parts of its heart. If an axolotl loses a leg, a special patch of cells forms over the wound and slowly grows into a perfect new leg, complete with bones, muscles and skin. Scientists have watched axolotls regrow the same leg again and again, each time as good as new. The trick seems to lie in those special cells, which can turn into almost any kind of body part the animal needs. Humans can heal a cut, but we cannot grow back a whole arm, so scientists study axolotls to learn how regrowth works. One day, their secrets might help doctors heal injuries that today seem impossible to fix.", options:[{t:"Humans can regrow a whole arm just as easily as an axolotl regrows a leg.", kind:"twist"},{t:"If an axolotl loses a leg, a patch of cells grows into a perfect new one.", kind:"detail"},{t:"Salamanders are fascinating animals that live in water and on land.", kind:"broad"},{t:"Axolotls can regrow lost legs and other body parts, over and over again, as good as new.", kind:"correct"}], why:"The main idea is that axolotls can regrow lost body parts, and scientists study them to learn how."},
+  // hd2mi04: 119 words
+  {id:"hd2mi04", type:"main", level:2, topic:"space", passage:"The Moon always shows us the same face, and that is no accident. Long ago, the Moon spun much faster, but Earth's gravity tugged on its bulges and slowed its spin, little by little. Over millions of years, the spin slowed until one full turn took exactly as long as one trip around Earth, about twenty seven days. Now the same side faces us all the time, while the far side never turns towards Earth at all. People sometimes call the far side the dark side, but it gets just as much sunlight as the side we see. We simply never get a look at it from down here, because the Moon turns in perfect step with its orbit.", options:[{t:"The Moon takes about twenty seven days to travel once around Earth.", kind:"detail"},{t:"The Moon always shows Earth the same face because its spin matches its orbit.", kind:"correct"},{t:"Space is full of amazing objects that scientists love to study.", kind:"broad"},{t:"The far side of the Moon is always dark and never gets any sunlight.", kind:"twist"}], why:"The main idea is that the Moon always shows the same face because its spin slowed to match its orbit."},
+  // hd2mi05: 112 words
+  {id:"hd2mi05", type:"main", level:2, topic:"sport", passage:"A marathon is 42.195 kilometres long, and the odd extra bit has a royal story behind it. At the London Olympics in 1908, the race was planned to be about 42 kilometres, finishing at the stadium. Then organisers decided the runners should finish in front of the royal box, so the royal family could watch the end of the race. That meant adding 195 metres to the course, winding the runners around the track to the special seats. The longer distance stuck, and in 1921 it became the official length for marathons everywhere. So every marathon runner today covers those extra 195 metres because of one change made for a royal view.", options:[{t:"The marathon distance became official in 1921.", kind:"detail"},{t:"Organisers added 195 metres so the runners would finish behind the stadium, away from the royal box.", kind:"twist"},{t:"The marathon is 42.195 kilometres because a royal viewing change in 1908 added 195 metres and the longer distance stuck.", kind:"correct"},{t:"Running is a popular sport that helps people stay fit and healthy.", kind:"broad"}], why:"The main idea is that the marathon distance comes from a 1908 change made so the royal family could watch the finish."},
+  // hd2in01: 101 words, intruder index 4
+  {id:"hd2in01", type:"intruder", level:2, topic:"games", sentences:["Capture the flag is a team game played on a large field split into two halves, with each team guarding a flag on its own side.","Players try to sneak across the middle line, grab the other team's flag and carry it safely back home without being tagged.","If you are tagged on enemy ground, you are sent to a jail area, where a teammate can free you with a quick touch.","The first team to carry the enemy flag safely back to its own side wins the game.","Board games are a good way to spend a rainy afternoon indoors."], intruder:4, why:"The sentence about board games does not belong because the passage is about how to play capture the flag, not what to do on a rainy afternoon."},
+  // hd2in02: 108 words, intruder index 0
+  {id:"hd2in02", type:"intruder", level:2, topic:"food", sentences:["In ancient Egypt, bread was sometimes used as money to pay workers who built temples and tombs.","To make bread rise, bakers mix yeast into the dough, and the yeast eats sugars in the flour and makes tiny bubbles of gas.","Kneading the dough stretches it into a springy net that traps those bubbles, so the loaf slowly puffs up as it rests.","When the risen dough goes into a hot oven, the gas bubbles expand and the heat sets the crust, turning soft dough into a golden loaf.","A baker knows the bread is ready when it sounds hollow if you tap the bottom of the loaf."], intruder:0, why:"The sentence about bread being used as money in ancient Egypt does not belong because the passage is about how bread rises, not how people paid for things long ago."},
+  // hd2in03: 111 words, intruder index 2
+  {id:"hd2in03", type:"intruder", level:2, topic:"weird history", sentences:["In ancient Rome, people cleaned their teeth with small twigs chewed until one end frayed into soft, brushy bristles, and they carried a fresh twig with them wherever they went.","Wealthy Romans also used special powders made from crushed bones and oyster shells to scrub their teeth until they shone, and a servant often mixed the powder fresh each morning.","Toothbrushes with bristles did not appear until much later, when traders brought them from China.","Some Roman recipes even mixed in charcoal, which helped polish the teeth, scrub away stains and freshen breath.","Romans also rinsed their mouths with salty water after meals to keep their teeth feeling fresh and clean."], intruder:2, why:"The sentence about toothbrushes arriving from China does not belong because the passage is about how Romans cleaned their teeth, not when later brushes appeared."},
+  // hd2in04: 111 words, intruder index 1
+  {id:"hd2in04", type:"intruder", level:2, topic:"how things work", sentences:["A zip works by using a small metal slider to link two rows of tiny teeth together in a neat line.","Zips are used on jackets, bags, tents and even space suits, because they are strong and easy to open.","Each tooth is shaped like a small hook, so it locks neatly into the tooth opposite it and refuses to slip apart.","When you pull the slider up, it pushes the teeth together and holds them in a firm, straight line with a satisfying click.","When you pull it down, a wedge inside the slider gently pries the teeth apart again, one by one, so the opening grows wider behind it."], intruder:1, why:"The sentence about zips being used on jackets and space suits does not belong because the passage is about how a zip works, not where zips are used."},
+  // hd2in05: 107 words, intruder index 3
+  {id:"hd2in05", type:"intruder", level:2, topic:"animals", sentences:["Emperor penguins survive the long Antarctic winter by huddling together in a huge, shuffling crowd through months of darkness and storms.","The birds on the cold outside of the huddle slowly shuffle inwards, so every penguin gets a turn in the warm centre, while warmer birds take their place on the edge.","The whole huddle slowly rotates like a wheel, so no penguin stays on the freezing edge for too long.","Penguins are excellent swimmers, and some species can dive deeper than two hundred metres.","The huddle can be several degrees warmer inside than the icy wind outside, which helps the whole group survive the bitter winter."], intruder:3, why:"The sentence about penguins diving deep does not belong because the passage is about how penguins keep warm by huddling, not how they swim."},
+];
+
+/*
+Word counts and checks:
+- hd2mi01: 139 words - main idea - kinds present: correct, detail, broad, twist
+- hd2mi02: 128 words - main idea - kinds present: correct, detail, broad, twist
+- hd2mi03: 128 words - main idea - kinds present: correct, detail, broad, twist
+- hd2mi04: 119 words - main idea - kinds present: correct, detail, broad, twist
+- hd2mi05: 112 words - main idea - kinds present: correct, detail, broad, twist
+- hd2in01: 101 words - intruder index 4
+- hd2in02: 108 words - intruder index 0
+- hd2in03: 111 words - intruder index 2
+- hd2in04: 111 words - intruder index 1
+- hd2in05: 107 words - intruder index 3
+*/
+
+const BANK_L3 = [
+  // hd3mi01: 124 words
+  {id:"hd3mi01", type:"main", level:3, topic:"food", passage:"In a tomb in Egypt, archaeologists found pots of honey that were three thousand years old. When they opened one pot, the honey inside still smelled sweet and was safe to taste. Honey almost never goes off, and jars found in old tombs, in shipwrecks and in the back of kitchen cupboards can still be good after hundreds of years.\n\nThe secret is that honey is too dry, too sour and too busy for germs. It holds almost no water, so tiny creatures cannot grow in it. It is also acidic, and bees add a natural germ-fighter when they make it. If a jar stays sealed and dry, nothing can spoil it, which is why honey is the only food that keeps almost forever.", options:[{t:"Archaeologists found three-thousand-year-old honey in an Egyptian tomb that was still safe to taste.", kind:"detail"},{t:"Honey lasts almost forever because it is too dry, too sour and too full of natural germ-fighters for anything to grow in it.", kind:"correct"},{t:"Honey never goes off because bees add water to it and keep it wet and sweet.", kind:"twist"},{t:"Food keeps best when it is stored in a cool, dry place away from sunlight.", kind:"broad"}], why:"The main idea is that honey keeps almost forever because its dryness, sourness and natural germ-fighters stop anything from growing in it."},
+  // hd3mi02: 114 words
+  {id:"hd3mi02", type:"main", level:3, topic:"games", passage:"Early arcade games almost always gave you exactly three lives. Lose all three and the game was over, no matter how far you had travelled. Players quickly learned to be careful, because every mistake cost a life and starting again meant paying to play once more. Some skilled players could stretch those three lives for an hour, but most people were done in minutes.\n\nGame makers chose three lives on purpose. One life made games end too fast and players felt cheated, while endless lives meant nobody paid for another turn. Three lives hit the sweet spot, giving players enough chances to learn the game and just enough pressure to have one more go.", options:[{t:"Arcade games gave players endless lives so nobody ever had to pay for another turn.", kind:"twist"},{t:"Games are more fun when they give players a fair chance to learn and improve.", kind:"broad"},{t:"Arcade games gave players three lives because that number kept games fun and challenging while still making players pay for another turn.", kind:"correct"},{t:"Skilled players could stretch three lives for an hour, but most people were done in minutes.", kind:"detail"}], why:"The main idea is that three lives were chosen on purpose because they balanced fun, challenge and the need for players to pay for another go."},
+  // hd3mi03: 111 words
+  {id:"hd3mi03", type:"main", level:3, topic:"weird history", passage:"In July 1518, a woman in the city of Strasbourg began to dance in the street, and she could not stop. Within a week, dozens of people had joined her, dancing day and night until they collapsed from exhaustion. Some danced for days, and a few even died, yet nobody could explain why they had started.\n\nHistorians still argue about what caused the dancing plague. Some think it was a kind of mass stress after a bad harvest and a harsh winter, while others blame mouldy grain that can affect the mind. Whatever the cause, the dancing stopped as suddenly as it had begun, leaving behind one of history's strangest mysteries.", options:[{t:"History is full of strange events that we still do not fully understand.", kind:"broad"},{t:"Historians agree that the dancing plague was caused by mouldy grain after a bad harvest.", kind:"twist"},{t:"Some historians blame mouldy grain that can affect the mind.", kind:"detail"},{t:"In 1518, people in Strasbourg danced uncontrollably for days, and historians still cannot agree on what caused it.", kind:"correct"}], why:"The main idea is that the dancing plague of 1518 saw people dance until they collapsed, and its cause remains an unsolved mystery."},
+  // hd3mi04: 122 words
+  {id:"hd3mi04", type:"main", level:3, topic:"how things work", passage:"A microwave oven does not cook food the way a normal oven does. Instead of heating the air around your dinner, it sends out invisible waves that make tiny water molecules inside the food wobble and rub together. That rubbing creates heat right inside the food, which is why the middle of a pie can be piping hot while the plate stays cool enough to hold.\n\nThe waves are tuned to shake water best, so foods full of water heat quickly while dry foods warm up slowly. Metal bowls block the waves, which is why you should never put one inside. Once the waves stop, the wobbling stops too, so the food starts cooling straight away, just like any other hot meal.", options:[{t:"Cooking food properly makes it safe to eat and taste its best.", kind:"broad"},{t:"A microwave heats food by sending waves that shake water molecules inside it, creating heat from within.", kind:"correct"},{t:"Metal bowls block the waves, which is why you should never put one inside.", kind:"detail"},{t:"A microwave cooks by heating the air around your dinner until the plate is too hot to hold.", kind:"twist"}], why:"The main idea is that a microwave heats food from the inside by shaking its water molecules with invisible waves."},
+  // hd3mi05: 121 words
+  {id:"hd3mi05", type:"main", level:3, topic:"space", passage:"Venus is the strangest spinner in our solar system. It turns so slowly that one full spin, a single day, takes 243 Earth days, while one trip around the Sun, a whole year, takes only 225 Earth days. That means a day on Venus lasts longer than its year, a fact that surprises almost everyone who hears it.\n\nVenus also spins backwards compared with most planets, so the Sun rises in the west and sets in the east. Scientists think a huge crash long ago may have knocked it upside down, flipping its spin. Thick clouds hide the surface, so the only way to see the damage is with radar, which can peer through the clouds and map the ground below.", options:[{t:"Venus spins so fast that one day takes only 225 Earth days while its year takes 243.", kind:"twist"},{t:"Scientists use radar to map Venus because thick clouds hide its surface.", kind:"detail"},{t:"The planets of our solar system each spin and orbit in their own way.", kind:"broad"},{t:"Venus spins so slowly and backwards that one day lasts longer than its year, with the Sun rising in the west.", kind:"correct"}], why:"The main idea is that Venus is a strange spinner, turning backwards so slowly that its day is longer than its year."},
+  // hd3in01: 103 words, intruder index 2
+  {id:"hd3in01", type:"intruder", level:3, topic:"sport", sentences:["The leader of the Tour de France wears a bright yellow jersey, and the colour was chosen for a very practical reason.","The race was started by a French sports newspaper called L'Auto, which was printed on yellow paper.","\n\nRiders in the Tour can burn more than six thousand calories on a single mountain stage.","To make the leading rider easy to spot in the crowd, organisers gave him a jersey in the same yellow as the newspaper.","The yellow jersey became so famous that the best rider is still known as the wearer of the yellow, more than a hundred years later."], intruder:2, why:"The calories sentence is about how much energy riders burn, not about why the leader's jersey is yellow."},
+  // hd3in02: 103 words, intruder index 3
+  {id:"hd3in02", type:"intruder", level:3, topic:"animals", sentences:["Fireflies glow because of a chemical reaction inside their bodies, where a substance called luciferin mixes with oxygen and makes a cold light.","The light is cold, which means it gives off almost no heat, so the firefly never burns itself while it shines.","Most fireflies flash in patterns to attract a mate, with each species using its own special rhythm like a secret code.","\n\nCrickets chirp by rubbing their wings together, and the sound can help you work out how warm the night is.","The glow also warns hungry predators to stay away, because fireflies taste bitter and are not worth eating."], intruder:3, why:"The sentence about crickets chirping does not belong because the passage is about why fireflies glow, not how crickets make sounds."},
+  // hd3in03: 103 words, intruder index 1
+  {id:"hd3in03", type:"intruder", level:3, topic:"games", sentences:["Tetris, one of the most played games in history, was created in 1984 by a Russian scientist named Alexey Pajitnov.","The music that plays during Tetris comes from an old Russian folk song called Korobeiniki, about a peddler selling his goods.","\n\nPajitnov built the game on a clunky Soviet computer, using falling blocks made of four squares each, called tetrominoes.","He named it by joining the Greek word tetra, meaning four, with tennis, his favourite sport.","The game spread from Moscow around the world, and it is still being played on phones and consoles everywhere, remixed and re-released more than forty years later."], intruder:1, why:"The music sentence is about the tune that plays during the game, not about how Tetris was created and named."},
+  // hd3in04: 103 words, intruder index 4
+  {id:"hd3in04", type:"intruder", level:3, topic:"space", sentences:["Jupiter's Great Red Spot is a storm wider than Earth, and it has been spinning for more than three hundred years.","The storm is a giant swirl of clouds that turns like a hurricane, with winds blowing at hundreds of kilometres an hour.","Jupiter has no solid ground to slow the storm down, so the winds keep spinning with nothing to stop them.","\n\nScientists think the storm gets its red colour from chemicals in the clouds, lifted up from deep inside the planet.","The first telescope was built more than four hundred years ago, and it changed how people saw the night sky."], intruder:4, why:"The sentence about the first telescope does not belong because the passage is about Jupiter's Great Red Spot, not how people first looked at the sky."},
+  // hd3in05: 100 words, intruder index 0
+  {id:"hd3in05", type:"intruder", level:3, topic:"weird history", sentences:["Niagara Falls also powers huge turbines that make electricity for homes across New York and Ontario.","In 1901, a 63-year-old schoolteacher named Annie Edson Taylor decided to ride over Niagara Falls inside a barrel.","She had the barrel padded with cushions and a mattress, fitted with a harness, and sealed tight, then she was pushed into the river above the falls.","\n\nThe barrel plunged over the edge and was pulled from the water below with Annie inside, bruised but alive.","She became the first person to survive the drop, and her barrel is still on display in a museum today."], intruder:0, why:"The electricity sentence is about what the falls power today, not about Annie Edson Taylor's barrel ride in 1901."}
+];
+
+/*
+Word counts and checks:
+- hd3mi01: 124 words - main idea (food) - kinds present: correct, detail, broad, twist
+- hd3mi02: 114 words - main idea (games) - kinds present: correct, detail, broad, twist
+- hd3mi03: 111 words - main idea (weird history) - kinds present: correct, detail, broad, twist
+- hd3mi04: 122 words - main idea (how things work) - kinds present: correct, detail, broad, twist
+- hd3mi05: 121 words - main idea (space) - kinds present: correct, detail, broad, twist
+- hd3in01: 103 words - intruder (sport), index 2
+- hd3in02: 103 words - intruder (animals), index 3
+- hd3in03: 103 words - intruder (games), index 1
+- hd3in04: 103 words - intruder (space), index 4
+- hd3in05: 100 words - intruder (weird history), index 0
+Intruder indices used: 0, 1, 2, 3, 4 (five different positions).
+All passages 100-140 words. Australian spelling throughout. No em dashes. No banned wording.
+*/
+
+var BANK = BANK_L1.concat(BANK_L2, BANK_L3);
+/* __BANK_END__ */
+
+/* ---- state ---- */
+var KEY = "headline-duel-progress-v1";
+var G = {
+  screen: "home",          /* home | howto | read | p1 | pass | p2 | reveal | sdread | sdp1 | sdpass | sdp2 | sdreveal | end */
+  level: 1,                /* shared level 1-3, persisted; rises silently */
+  sinceRise: 0,            /* correct answers since the last level rise, persisted, never shown */
+  duel: null               /* per-duel state, see newDuel() */
+};
+var D = null;              /* shorthand for G.duel while a duel runs */
+
+function loadProgress(){
+  try{
+    var raw = localStorage.getItem(KEY);
+    if(raw){
+      var p = JSON.parse(raw);
+      if(p && typeof p.level === "number" && p.level >= 1 && p.level <= 3){ G.level = p.level; }
+      if(p && typeof p.sinceRise === "number" && p.sinceRise >= 0){ G.sinceRise = p.sinceRise; }
+    }
+  }catch(e){ /* storage blocked or corrupt: play on, level just starts at 1 */ }
+}
+function saveProgress(){
+  try{ localStorage.setItem(KEY, JSON.stringify({level:G.level, sinceRise:G.sinceRise})); }catch(e){}
+}
+function resetLevel(){
+  G.level = 1; G.sinceRise = 0; saveProgress(); render();
+}
+function levelName(l){
+  return l === 1 ? "Level 1 - short and clear" : l === 2 ? "Level 2 - trickier" : "Level 3 - the twisty ones";
+}
+
+/* ---- helpers ---- */
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function shuffle(a){
+  var b = a.slice(), i, j, t;
+  for(i = b.length - 1; i > 0; i--){ j = Math.floor(Math.random() * (i + 1)); t = b[i]; b[i] = b[j]; b[j] = t; }
+  return b;
+}
+function poolFor(level){
+  return BANK.filter(function(p){ return p.level === level; });
+}
+function passageText(p){
+  return p.type === "main" ? p.passage : p.sentences.join(" ");
+}
+function roundType(r){ return r % 2 === 1 ? "main" : "intruder"; }
+function roundLabel(r){
+  return roundType(r) === "main" ? "Main Idea round" : "Intruder round";
+}
+
+/* ---- duel setup ---- */
+function newDuel(){
+  var pool = poolFor(G.level);
+  var mains = shuffle(pool.filter(function(p){ return p.type === "main"; })).slice(0, 3);
+  var intrs = shuffle(pool.filter(function(p){ return p.type === "intruder"; })).slice(0, 3);
+  D = {
+    round: 1,
+    rounds: [mains[0], intrs[0], mains[1], intrs[1], mains[2], intrs[2]],
+    scores: [0, 0],
+    used: [mains[0].id, intrs[0].id, mains[1].id, intrs[1].id, mains[2].id, intrs[2].id],
+    opts: {1: null, 2: null},
+    sel: null,
+    p1pick: null, p2pick: null,
+    sd: null,              /* sudden-death passage, set on a tie */
+    sdScores: null,
+    winner: null,          /* 0 = Player 1, 1 = Player 2, "shared" = honours shared */
+    sdPlayed: false
+  };
+  G.duel = D;
+  startRound();
+}
+function dealOptions(p){
+  if(p.type === "main"){
+    D.opts[1] = shuffle(p.options);
+    D.opts[2] = shuffle(p.options);
+  }else{
+    /* Intruder: Player 1 sees the sentences in passage order; Player 2
+       sees them shuffled, so nobody can copy a position. The reveal
+       always shows passage order again. */
+    D.opts[1] = [0, 1, 2, 3, 4];
+    D.opts[2] = shuffle([0, 1, 2, 3, 4]);
+  }
+  D.sel = null; D.p1pick = null; D.p2pick = null;
+}
+function currentPassage(){
+  return D.rounds[D.round - 1];
+}
+function startRound(){
+  dealOptions(currentPassage());
+  G.screen = "read";
+  render();
+}
+function startSuddenDeath(){
+  var pool = poolFor(G.level).filter(function(p){ return p.type === "intruder" && D.used.indexOf(p.id) === -1; });
+  if(pool.length === 0){ pool = poolFor(G.level).filter(function(p){ return p.type === "intruder"; }); }
+  D.sd = shuffle(pool)[0];
+  D.sdPlayed = false;
+  D.sdScores = [0, 0];
+  dealOptions(D.sd);
+  G.screen = "sdread";
+  render();
+}
+
+/* ---- flow ---- */
+function goHowto(){ G.screen = "howto"; render(); }
+function goHome(){ G.screen = "home"; D = null; G.duel = null; render(); }
+function readyToDuel(){ G.screen = "p1"; render(); }
+function readyToDuelSD(){ G.screen = "sdp1"; render(); }
+function pickOpt(i){ D.sel = i; render(); }
+function confirmPick(){
+  if(D.sel === null || D.sel === undefined){ return; }
+  if(G.screen === "p1"){ D.p1pick = D.sel; D.sel = null; G.screen = "pass"; render(); }
+  else if(G.screen === "p2"){ D.p2pick = D.sel; D.sel = null; scoreReveal(false); }
+  else if(G.screen === "sdp1"){ D.p1pick = D.sel; D.sel = null; G.screen = "sdpass"; render(); }
+  else if(G.screen === "sdp2"){ D.p2pick = D.sel; D.sel = null; scoreReveal(true); }
+}
+function goPass2(){ G.screen = "p2"; render(); }
+function goPass2SD(){ G.screen = "sdp2"; render(); }
+function isCorrect(player, sudden){
+  var p = sudden ? D.sd : currentPassage();
+  var pick = player === 1 ? D.p1pick : D.p2pick;
+  if(pick === null || pick === undefined){ return false; }
+  if(p.type === "main"){ return D.opts[player][pick].kind === "correct"; }
+  return D.opts[player][pick] === p.intruder;
+}
+function pickedText(player, sudden){
+  var p = sudden ? D.sd : currentPassage();
+  var pick = player === 1 ? D.p1pick : D.p2pick;
+  if(pick === null || pick === undefined){ return ""; }
+  if(p.type === "main"){ return D.opts[player][pick].t; }
+  return p.sentences[D.opts[player][pick]];
+}
+function sameTrap(sudden){
+  /* Both players picked the same answer and it was not the right one. */
+  if(isCorrect(1, sudden) || isCorrect(2, sudden)){ return false; }
+  return pickedText(1, sudden) === pickedText(2, sudden);
+}
+function noteCorrect(){
+  /* One correct answer each counts toward the silent level rise.
+     Called once per correct answer at reveal time. */
+  G.sinceRise += 1;
+  if(G.sinceRise >= 4 && G.level < 3){ G.level += 1; G.sinceRise = 0; }
+  saveProgress();
+}
+function scoreReveal(sudden){
+  var c1 = isCorrect(1, sudden), c2 = isCorrect(2, sudden);
+  if(sudden){
+    if(c1){ D.sdScores[0] += 1; noteCorrect(); }
+    if(c2){ D.sdScores[1] += 1; noteCorrect(); }
+    D.sdPlayed = true;
+    if(D.sdScores[0] === D.sdScores[1]){ D.winner = "shared"; }
+    else if(D.sdScores[0] > D.sdScores[1]){ D.winner = 0; }
+    else { D.winner = 1; }
+    G.screen = "sdreveal";
+  }else{
+    if(c1){ D.scores[0] += 1; noteCorrect(); }
+    if(c2){ D.scores[1] += 1; noteCorrect(); }
+    G.screen = "reveal";
+  }
+  render();
+}
+function nextRound(){
+  if(D.round < 6){ D.round += 1; startRound(); return; }
+  if(D.scores[0] === D.scores[1]){ startSuddenDeath(); return; }
+  D.winner = D.scores[0] > D.scores[1] ? 0 : 1;
+  G.screen = "end";
+  render();
+}
+function finishSuddenDeath(){ G.screen = "end"; render(); }
+function rematch(){ newDuel(); }
+
+/* ---- rendering ---- */
+function app(){ return document.getElementById("app"); }
+function scoreLine(){
+  return '<p><span class="score">Player 1: ' + D.scores[0] + ' - Player 2: ' + D.scores[1] + '</span></p>';
+}
+function renderHome(){
+  var h = '<span class="tag">Reading Efficiency - two players</span>';
+  h += '<h1>Headline Duel</h1>';
+  h += '<p><strong>Practise spotting the main idea of a short passage.</strong> Read it together, then answer on your own - whoever spots the main idea most often wins the duel.</p>';
+  h += '<p class="muted">No timers. No streaks. No coins. A correct answer scores the same whether it took ten seconds or two minutes.</p>';
+  h += '<div class="card"><p><span class="pill on">' + esc(levelName(G.level)) + '</span></p>';
+  h += '<p class="small">The level rises quietly as you both get answers right. It never drops, and a missed answer changes nothing.</p>';
+  h += '<p><button class="primary" onclick="newDuel()">Start a duel</button> ';
+  h += '<button onclick="goHowto()">How to play</button></p>';
+  if(G.level > 1){ h += '<p><button onclick="resetLevel()">Start back at Level 1</button></p>'; }
+  h += '</div>';
+  h += '<p class="small muted">Six rounds a duel, about five to eight minutes. One phone, pass and play. This game practises finding the main idea - it never claims to make you read faster.</p>';
+  app().innerHTML = h;
+}
+function renderHowto(){
+  var h = '<h2>How to play</h2>';
+  h += '<div class="card"><h3>1 - Read together</h3><p>A short passage appears. Read it together, out loud or in your heads. Take as long as you like. When you are both ready, tap <strong>We have read it - let us duel</strong>. The passage disappears, so the duel tests what you took in, not re-scanning.</p></div>';
+  h += '<div class="card"><h3>2 - Answer in secret</h3><p>Player 1 answers first while Player 2 looks away. Then the phone passes over and Player 2 answers the same question - with the choices shuffled, so nobody can copy a position.</p><p><strong>Main Idea rounds:</strong> pick the one sentence that best sums up the whole passage. <strong>Intruder rounds:</strong> tap the one sentence that does not belong.</p></div>';
+  h += '<div class="card"><h3>3 - The reveal</h3><p>Both answers appear side by side. A correct answer scores 1 point. Every reveal explains why, in one line - so a missed one still teaches something.</p><p>Most points after 6 rounds wins. A tie goes to one sudden-death Intruder round. If that is tied too, honours are shared.</p></div>';
+  h += '<div class="card"><h3>The traps</h3><p>Three traps wait in every Main Idea round: a true detail that is only a small part, a sentence that is true of the topic but not of this passage, and a sentence that twists the passage\'s own words. Careful reading beats fast skimming - that is how a younger player can genuinely beat an adult.</p></div>';
+  h += '<p><button class="primary" onclick="goHome()">Back</button></p>';
+  app().innerHTML = h;
+}
+function renderRead(sudden){
+  var p = sudden ? D.sd : currentPassage();
+  var h = sudden ? '<span class="tag">Sudden death</span>' : '<span class="tag">Round ' + D.round + ' of 6 - ' + esc(roundLabel(D.round)) + '</span>';
+  h += '<h2>' + (sudden ? 'Sudden death - one Intruder round' : 'Read it together') + '</h2>';
+  h += '<p class="muted">Read the passage together. Take as long as you like.</p>';
+  h += '<div class="passage">';
+  var bits = passageText(p).split("\n\n");
+  for(var i = 0; i < bits.length; i++){ h += '<p>' + esc(bits[i]) + '</p>'; }
+  h += '</div>';
+  if(sudden){
+    h += '<p><button class="primary" onclick="readyToDuelSD()">We have read it - let us duel</button></p>';
+  }else{
+    h += '<p><button class="primary" onclick="readyToDuel()">We have read it - let us duel</button></p>';
+  }
+  h += scoreLine();
+  app().innerHTML = h;
+}
+function renderAnswer(player, sudden){
+  var p = sudden ? D.sd : currentPassage();
+  var other = player === 1 ? 2 : 1;
+  var h = sudden ? '<span class="tag">Sudden death</span>' : '<span class="tag">Round ' + D.round + ' of 6 - ' + esc(roundLabel(D.round)) + '</span>';
+  h += '<div class="lookaway"><h2>Player ' + player + ' - your turn</h2><p>Player ' + other + ' - look away! No peeking, no hints.</p></div>';
+  if(p.type === "main"){
+    h += '<h2>Which headline says what the passage is mostly about?</h2>';
+    h += '<p class="muted">Pick the one sentence that sums up the <strong>whole</strong> passage - not just one part of it.</p>';
+  }else{
+    h += '<h2>Which sentence does not belong?</h2>';
+    h += '<p class="muted">Four of these sentences belong to the same passage. One of them does not. Tap the odd one out.</p>';
+  }
+  var opts = D.opts[player];
+  for(var i = 0; i < opts.length; i++){
+    var txt = p.type === "main" ? opts[i].t : p.sentences[opts[i]];
+    var cls = D.sel === i ? "picked" : "";
+    h += '<button class="opt ' + cls + '" onclick="pickOpt(' + i + ')">' + esc(txt) + '</button>';
+  }
+  var dis = (D.sel === null || D.sel === undefined) ? "disabled" : "";
+  h += '<p><button class="primary" ' + dis + ' onclick="confirmPick()">That is my answer</button></p>';
+  h += '<p class="small muted">Tap a card to choose it. You can change your mind until you tap <strong>That is my answer</strong>.</p>';
+  app().innerHTML = h;
+}
+function renderPass(sudden){
+  var h = '<span class="tag">Passing over</span>';
+  h += '<h2>Player 1 has answered</h2>';
+  h += '<div class="card"><p>Player 1\'s answer is hidden. Pass the phone to Player 2.</p><p class="muted">Player 2 gets the same question, with the choices shuffled.</p></div>';
+  if(sudden){
+    h += '<p><button class="primary" onclick="goPass2SD()">Player 2 - I am ready</button></p>';
+  }else{
+    h += '<p><button class="primary" onclick="goPass2()">Player 2 - I am ready</button></p>';
+  }
+  app().innerHTML = h;
+}
+function revealSides(sudden){
+  var p = sudden ? D.sd : currentPassage();
+  var c1 = isCorrect(1, sudden), c2 = isCorrect(2, sudden);
+  var h = '<div class="versus">';
+  h += '<div class="side"><h3>Player 1</h3><p>' + esc(pickedText(1, sudden)) + '</p>';
+  h += c1 ? '<p class="tick">Spot on.</p>' : '<p class="muted">Not this one.</p>';
+  h += '</div>';
+  h += '<div class="side"><h3>Player 2</h3><p>' + esc(pickedText(2, sudden)) + '</p>';
+  h += c2 ? '<p class="tick">Spot on.</p>' : '<p class="muted">Not this one.</p>';
+  h += '</div></div>';
+  if(p.type === "main"){
+    var correct = null;
+    for(var i = 0; i < p.options.length; i++){ if(p.options[i].kind === "correct"){ correct = p.options[i].t; } }
+    h += '<div class="why"><strong>The main idea was:</strong> ' + esc(correct) + '<br>' + esc(p.why) + '</div>';
+  }else{
+    h += '<div class="why"><strong>The sentence that does not belong is:</strong> ' + esc(p.sentences[p.intruder]) + '<br>' + esc(p.why) + '</div>';
+    h += '<p class="small muted">The passage in full: ' + esc(passageText(p)) + '</p>';
+  }
+  if(sameTrap(sudden)){ h += '<div class="banner">Both caught by the same trap!</div>'; }
+  return h;
+}
+function renderReveal(sudden){
+  var h = sudden ? '<span class="tag">Sudden death - the reveal</span>' : '<span class="tag">Round ' + D.round + ' of 6 - the reveal</span>';
+  h += '<h2>' + (sudden ? 'Sudden death' : 'The reveal') + '</h2>';
+  h += revealSides(sudden);
+  if(sudden){
+    h += '<p>Sudden death: Player 1 scored ' + D.sdScores[0] + ', Player 2 scored ' + D.sdScores[1] + '.</p>';
+    h += scoreLine();
+    h += '<p><button class="primary" onclick="finishSuddenDeath()">See the final score</button></p>';
+  }else{
+    h += scoreLine();
+    if(D.round < 6){
+      h += '<p><button class="primary" onclick="nextRound()">Next round</button></p>';
+    }else if(D.scores[0] === D.scores[1]){
+      h += '<p><strong>Dead heat at ' + D.scores[0] + ' each - sudden death decides it.</strong></p>';
+      h += '<p><button class="primary" onclick="nextRound()">Sudden death</button></p>';
+    }else{
+      h += '<p><button class="primary" onclick="nextRound()">See the final score</button></p>';
+    }
+  }
+  app().innerHTML = h;
+}
+function renderEnd(){
+  var h = '<span class="tag">Final score</span><h2>The duel is done</h2>';
+  h += scoreLine();
+  if(D.winner === "shared"){
+    h += '<div class="card"><p><strong>Too close to call - honours shared.</strong></p><p>Neither of you could be separated, even in sudden death. That is a duel worth a rematch.</p></div>';
+  }else{
+    var w = D.winner === 0 ? 1 : 2;
+    var l = D.winner === 0 ? 2 : 1;
+    h += '<div class="card"><p><strong>Player ' + w + ' wins the duel!</strong></p><p>Player ' + w + ' spotted the main idea most often. Player ' + l + ' read it well too - losing a duel just means they read it better this round.</p></div>';
+  }
+  h += '<p><button class="primary" onclick="rematch()">Rematch</button> <button onclick="goHome()">Home</button></p>';
+  h += '<p class="small muted">A rematch deals fresh passages and starts 0-0.</p>';
+  app().innerHTML = h;
+}
+function render(){
+  var s = G.screen;
+  if(s === "home"){ renderHome(); }
+  else if(s === "howto"){ renderHowto(); }
+  else if(s === "read"){ renderRead(false); }
+  else if(s === "p1"){ renderAnswer(1, false); }
+  else if(s === "pass"){ renderPass(false); }
+  else if(s === "p2"){ renderAnswer(2, false); }
+  else if(s === "reveal"){ renderReveal(false); }
+  else if(s === "sdread"){ renderRead(true); }
+  else if(s === "sdp1"){ renderAnswer(1, true); }
+  else if(s === "sdpass"){ renderPass(true); }
+  else if(s === "sdp2"){ renderAnswer(2, true); }
+  else if(s === "sdreveal"){ renderReveal(true); }
+  else if(s === "end"){ renderEnd(); }
+}
+loadProgress();
+render();
+</script>
+</body>
+</html>
