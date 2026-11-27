@@ -60,6 +60,17 @@ ul.chain li.chain-step { animation: popIn .45s ease both; }
 @keyframes dotPop { 0% { opacity: 0; transform: scale(0); } 40% { opacity: 1; transform: scale(1.4); } 100% { opacity: 1; transform: scale(1); } }
 @keyframes pickPulse { 0%, 100% { box-shadow: 3px 3px 0 #111; transform: scale(1); } 50% { box-shadow: 0 0 0 5px #ff2e88, 4px 4px 0 #111; transform: scale(1.06); } }
 @keyframes tickPop { 0% { transform: scale(0); } 70% { transform: scale(1.4); } 100% { transform: scale(1); } }
+.book-tile { display: inline-block; min-width: 44px; text-align: center; font-size: 26px; padding: 4px 8px; border: 3px solid #111; border-radius: 12px; box-shadow: 3px 3px 0 #111; margin: 0 8px 4px 0; vertical-align: middle; }
+.book-tile.t0 { background: #ffe3f1; }
+.book-tile.t1 { background: #d8f7a0; }
+.book-tile.t2 { background: #fff3bf; }
+.book-tile.t3 { background: #d6ecff; }
+.book-tile.t4 { background: #ffd9c2; }
+.book-tile.t5 { background: #e6d9ff; }
+.book-stamp { display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: .04em; padding: 2px 8px; border: 2px solid #111; border-radius: 999px; transform: rotate(-3deg); margin-left: 6px; vertical-align: middle; }
+.book-stamp.loop { background: #d8f7a0; }
+.book-stamp.fix { background: #ffd9c2; }
+.book-missing { display: inline-block; min-width: 44px; text-align: center; font-size: 26px; padding: 4px 8px; border: 3px dashed #8a9a87; border-radius: 12px; color: #8a9a87; background: #eef7f0; margin: 0 6px 6px 0; vertical-align: middle; }
 @media (hover: hover) {
   button:not(.sel):hover { transform: translateY(-2px); box-shadow: 6px 6px 0 #111; }
   button.primary:hover { transform: translateY(-2px); box-shadow: 6px 6px 0 #ff2e88; }
@@ -1093,7 +1104,7 @@ function renderHome(){
   h += '<p class="small muted">A level opens when you get 7 of every 10 ripples right across your last two games at the level below. Levels never drop - replay any level any time.</p>';
   h += '<p><button class="primary" onclick="startSession()">Play</button>';
   h += '<button onclick="goHowto()">How to play</button>';
-  h += '<button onclick="goBook()">Ripple Book (' + store.book.length + ' chains)</button></p>';
+  h += '<button onclick="goBook()">Ripple Book (' + store.book.length + ' of ' + SPARKS.length + ' chains)</button></p>';
   if(store.best !== null) h += '<p class="small">Best game so far: ' + store.best + '% of ripples right.</p>';
   h += '<p><button onclick="startOver()">Start over</button> <span class="small muted">Clears levels, Ripple Book and best score on this device.</span></p>';
   return h;
@@ -1202,21 +1213,31 @@ function renderFixit(){
   return h;
 }
 function renderBook(){
+  var total = SPARKS.length;
   var h = "<h2>📖 Ripple Book</h2>";
-  h += "<p>" + store.book.length + " chains discovered.</p>";
-  if(!store.book.length){
-    h += "<p>Play a game and every true chain you meet is added here, grouped by where it starts.</p>";
-  } else {
-    PLACES.forEach(function(p){
-      var mine = SPARKS.filter(function(sp){ return sp.place === p.name && store.book.indexOf(sp.id) >= 0; });
-      if(!mine.length) return;
-      h += "<h3>" + p.em + " " + esc(p.name) + "</h3><ul class=\"chain\">";
+  h += "<p class=\"score\">" + store.book.length + " chains discovered.</p>";
+  h += "<p>That is " + store.book.length + " of " + total + " chains in the whole town. Every chain you meet in a game goes in your Book, grouped by where it starts. A chain you have not met yet shows as a greyed-out tile.</p>";
+  PLACES.forEach(function(p, pi){
+    var all = SPARKS.filter(function(sp){ return sp.place === p.name; });
+    var mine = all.filter(function(sp){ return store.book.indexOf(sp.id) >= 0; });
+    var missing = all.length - mine.length;
+    h += "<h3>" + p.em + " " + esc(p.name) + " - " + mine.length + " of " + all.length + " chains</h3>";
+    if(mine.length){
+      h += "<ul class=\"chain\">";
       mine.forEach(function(sp){
-        h += "<li><strong>" + esc(sp.spark) + "</strong><br><span class=\"small\">" + sp.chain.map(function(l){ return esc(l.place) + ": " + esc(l.text); }).join(" - ") + "</span></li>";
+        var stamp = "";
+        if(sp.loop) stamp += '<span class="book-stamp loop">🔁 LOOP</span>';
+        if(sp.fix) stamp += '<span class="book-stamp fix">🔧 FIX IT</span>';
+        h += "<li><span class=\"book-tile t" + pi + "\">" + p.em + "</span><strong>" + esc(sp.spark) + "</strong>" + stamp + "<br><span class=\"small\">" + sp.chain.map(function(l){ return esc(l.place) + ": " + esc(l.text); }).join(" - ") + "</span></li>";
       });
       h += "</ul>";
-    });
-  }
+    }
+    if(missing > 0){
+      h += "<p>";
+      for(var i = 0; i < missing; i++) h += '<span class="book-missing">?</span>';
+      h += '<span class="small muted">' + missing + (missing === 1 ? " chain" : " chains") + " still to discover here.</span></p>";
+    }
+  });
   h += '<p><button class="primary" onclick="goHome()">Back</button></p>';
   return h;
 }
