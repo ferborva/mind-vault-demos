@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ripple Town - predict the ripple</title>
+<style>
+* { box-sizing: border-box; }
+body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; background: #eef7f0; color: #22301f; line-height: 1.45; }
+#app { max-width: 720px; margin: 0 auto; padding: 16px; }
+h1 { font-size: 34px; margin: 8px 0 4px; }
+h2 { font-size: 26px; margin: 10px 0 6px; }
+h3 { font-size: 19px; margin: 14px 0 6px; }
+p { margin: 8px 0; }
+.small { font-size: 14px; }
+.muted { color: #5a6b57; }
+.tagline { font-size: 18px; font-weight: 600; }
+button { font: inherit; min-height: 48px; min-width: 48px; padding: 10px 18px; border-radius: 12px; border: 3px solid #2e6b34; background: #fff; color: #22301f; cursor: pointer; margin: 4px 6px 4px 0; }
+button.primary { background: #2e6b34; color: #fff; }
+button:disabled { opacity: 0.45; cursor: default; }
+button.sel { background: #ffe08a; border-color: #b8860b; }
+.card { background: #fff; border: 3px solid #2e6b34; border-radius: 14px; padding: 14px; margin: 10px 0; min-height: 48px; }
+.card.opt { cursor: pointer; }
+.card.opt.sel { background: #ffe08a; border-color: #b8860b; }
+.spark { background: #fff8d6; border-color: #b8860b; font-size: 18px; }
+.why { background: #e3f2e5; border: 3px solid #2e6b34; border-radius: 12px; padding: 12px; margin: 10px 0; }
+.gentle { background: #eef4ff; border: 3px solid #4a6fa5; border-radius: 12px; padding: 12px; margin: 10px 0; }
+.map { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; }
+.place { background: #fff; border: 3px solid #7ba05b; border-radius: 14px; padding: 10px 6px; text-align: center; min-height: 64px; }
+.place .em { font-size: 30px; display: block; }
+.place .nm { font-size: 14px; font-weight: 700; }
+.place.lit { background: #ffe08a; border-color: #b8860b; }
+.place.spark { background: #fff8d6; border-color: #b8860b; }
+.score { font-size: 20px; font-weight: 700; }
+.tick { color: #2e6b34; font-weight: 700; }
+.cross { color: #4a6fa5; font-weight: 700; }
+ul.chain { list-style: none; padding: 0; }
+ul.chain li { background: #fff; border: 2px solid #7ba05b; border-radius: 10px; padding: 10px; margin: 6px 0; }
+.levels { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.levels button.locked { opacity: 0.45; }
+.howto-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+@media (min-width: 560px) { .howto-grid { grid-template-columns: 1fr 1fr 1fr; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+/* Ripple Town - predict a chain of consequences in a small pretend town.
+   Single file, no network, no tracking, no text inputs, no timing pressure.
+   Score is accuracy only: 1 point per correct link. Difficulty rises only
+   with demonstrated ability. A miss is a surprise, never a verdict on the player. */
+var appEl = document.getElementById("app");
+
+var PLACES = [
+  {name: "School", em: "🏫"},
+  {name: "Park Pond", em: "🦆"},
+  {name: "Bakery", em: "🥐"},
+  {name: "Library", em: "📚"},
+  {name: "Bus Stop", em: "🚌"},
+  {name: "Playground", em: "🛝"}
+];
+function placeEm(name){
+  for(var i = 0; i < PLACES.length; i++) if(PLACES[i].name === name) return PLACES[i].em;
+  return "📍";
+}
+/* Follow-on for an off-path pick: the lead card of the next step follows from
+   the place the player just picked. */
+var NEXT = {
+  "School": {place: "Playground", text: "More kids run to the Playground after the bell"},
+  "Park Pond": {place: "Bakery", text: "The ducks waddle over to the Bakery for crumbs"},
+  "Bakery": {place: "Bus Stop", text: "More people wait at the Bus Stop with warm bread"},
+  "Library": {place: "School", text: "Kids carry library books back to School"},
+  "Bus Stop": {place: "Bakery", text: "People waiting at the Bus Stop buy a snack from the Bakery"},
+  "Playground": {place: "Park Pond", text: "Tired kids wander to the Park Pond to rest"}
+};
+var GENERIC = {
+  "School": ["The School hall gets busy after lunch", "Kids draw pictures at School"],
+  "Park Pond": ["The ducks paddle in circles at the Park Pond", "Someone feeds the ducks at the Park Pond"],
+  "Bakery": ["The Bakery smells of fresh bread", "The Bakery puts out a tray of buns"],
+  "Library": ["The Library puts new books on display", "Someone reads quietly in the Library"],
+  "Bus Stop": ["The bus arrives at the Bus Stop on time", "People chat while they wait at the Bus Stop"],
+  "Playground": ["Kids take turns on the swings at the Playground", "A ball rolls across the Playground"]
+};
+var LEVELS = [
+  {name: "Puddle", links: 2, loop: 0, fix: 0, blurb: "2-link chains, all 5 rounds are Predict the Ripple. Effects stay close to home."},
+  {name: "Pond", links: 3, loop: 0, fix: 0, blurb: "3-link chains. Effects can jump across the map, and the misleading turns look more likely."},
+  {name: "River", links: 3, loop: 1, fix: 0, blurb: "3-link chains, plus 1 Loop Spotter round per game. Chains can loop back to an earlier place."},
+  {name: "Ocean", links: 3, loop: 1, fix: 1, blurb: "3-link chains, plus 1 Loop Spotter and 1 Fix It round per game. The levers get subtler."}
+];
+var ROUNDS_PER_GAME = 5;
+var STORE_KEY = "ripple-town-v1";
+
+function esc(s){
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function shuffle(a){
+  var arr = a.slice();
+  for(var i = arr.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  }
+  return arr;
+}
+function loadStore(){
+  var d = {unlocked: 1, book: [], best: null, sessions: []};
+  try{
+    var raw = localStorage.getItem(STORE_KEY);
+    if(raw){
+      var p = JSON.parse(raw);
+      if(p && typeof p === "object"){
+        if(p.unlocked >= 1 && p.unlocked <= 4) d.unlocked = p.unlocked;
+        if(Array.isArray(p.book)) d.book = p.book;
+        if(typeof p.best === "number") d.best = p.best;
+        if(Array.isArray(p.sessions)) d.sessions = p.sessions;
+      }
+    }
+  }catch(e){ /* storage blocked or broken: play without saving */ }
+  return d;
+}
+function saveStore(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }catch(e){ /* play on without saving */ }
+}
+var store = loadStore();
+
+/* __SPARKS_BEGIN__ */
+var SPARKS = [
+  {
+    id: "rt01",
+    spark: "The school holds a big fair on Saturday morning.",
+    place: "School",
+    chain: [
+      { place: "Playground", text: "More families walk through the Playground to get to the fair", why: "The Playground is on the way to the School, so families pass through it on the way to the fair." },
+      { place: "Bakery", text: "The Bakery sells out of muffins by lunch", why: "Hungry families stop at the Bakery on the way home, and there are lots of them." }
+    ],
+    d: [
+      [ { place: "Park Pond", text: "Ducks swim away from the Pond for the day" }, { place: "Library", text: "The Library closes early on Saturday" } ],
+      [ { place: "Bus Stop", text: "The Bus Stop is packed all morning" }, { place: "Park Pond", text: "The Pond water turns muddy" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt02",
+    spark: "A heavy rain storm floods the Park Pond path.",
+    place: "Park Pond",
+    chain: [
+      { place: "Park Pond", text: "Kids cannot walk around the Pond", why: "The path is under water, so kids cannot walk on it." },
+      { place: "Library", text: "More kids read at the Library after school", why: "With the Pond path shut, kids look for another place to go, and the Library is close by." }
+    ],
+    d: [
+      [ { place: "Playground", text: "The Playground slides get slippery" }, { place: "Bakery", text: "The Bakery bakes extra bread" } ],
+      [ { place: "School", text: "The School closes for the day" }, { place: "Bus Stop", text: "Buses stop running in the rain" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt03",
+    spark: "The Bakery opens an hour earlier on school days.",
+    place: "Bakery",
+    chain: [
+      { place: "Bakery", text: "Kids buy warm rolls on the way to school", why: "The Bakery is open when kids walk past, so they stop for a warm roll." },
+      { place: "School", text: "Kids arrive at school with full tummies and settle in happily", why: "A warm roll fills tummies, so kids sit down calm and ready for class." }
+    ],
+    d: [
+      [ { place: "Library", text: "The Library opens earlier too" }, { place: "Park Pond", text: "Ducks wait at the Pond for crumbs" } ],
+      [ { place: "Playground", text: "Kids play ball games before school" }, { place: "Bus Stop", text: "The Bus Stop gets crowded at 7am" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt04",
+    spark: "The Bus Stop gets a new shelter with seats.",
+    place: "Bus Stop",
+    chain: [
+      { place: "Bus Stop", text: "More kids wait at the Bus Stop instead of getting a lift", why: "A dry seat makes waiting comfy, so kids choose the bus over a lift." },
+      { place: "School", text: "Fewer cars crowd the School gate in the morning", why: "More kids on the bus means fewer cars dropping kids off." }
+    ],
+    d: [
+      [ { place: "School", text: "The School starts later in the morning" }, { place: "Bakery", text: "The Bakery sells breakfast at the Bus Stop" } ],
+      [ { place: "Library", text: "The Library gets busier in the morning" }, { place: "Playground", text: "The Playground opens earlier" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt05",
+    spark: "The Library buys ten new puzzle books.",
+    place: "Library",
+    chain: [
+      { place: "Library", text: "Kids borrow the puzzle books first", why: "New puzzle books are fun, so kids grab them before anything else." },
+      { place: "Playground", text: "Kids swap puzzle answers at the Playground at lunch", why: "Kids love to chat about the puzzles, and the Playground is where they meet at lunch." }
+    ],
+    d: [
+      [ { place: "Bakery", text: "The Bakery starts selling puzzle books" }, { place: "School", text: "The School buys puzzle books for every class" } ],
+      [ { place: "Bus Stop", text: "Kids do puzzles at the Bus Stop" }, { place: "Bakery", text: "Kids trade puzzles for muffins" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt06",
+    spark: "A family of ducks moves into the Park Pond.",
+    place: "Park Pond",
+    chain: [
+      { place: "Park Pond", text: "Kids stop to watch the ducks after school", why: "Ducks are fun to watch, so kids stop on their way home." },
+      { place: "Library", text: "Kids borrow books about ducks", why: "Watching real ducks makes kids curious, so they look for duck books at the Library." }
+    ],
+    d: [
+      [ { place: "School", text: "The School starts a duck club" }, { place: "Playground", text: "Ducks move to the Playground" } ],
+      [ { place: "Bakery", text: "The Bakery sells duck food" }, { place: "Bus Stop", text: "Ducks wait at the Bus Stop" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt07",
+    spark: "The Playground gets a new climbing frame.",
+    place: "Playground",
+    chain: [
+      { place: "Playground", text: "More kids play at the Playground after school", why: "A new climbing frame is fun, so more kids stay to play." },
+      { place: "Bus Stop", text: "Fewer kids catch the early bus home", why: "Kids stay to play, so they miss the early bus and catch a later one." }
+    ],
+    d: [
+      [ { place: "Library", text: "The Library gets quieter after school" }, { place: "Park Pond", text: "Kids climb trees by the Pond" } ],
+      [ { place: "School", text: "The School starts later in the morning" }, { place: "Bakery", text: "The Bakery closes earlier" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt08",
+    spark: "The school bans balls on the oval for one week.",
+    place: "School",
+    chain: [
+      { place: "Playground", text: "Kids invent new games without a ball", why: "With no ball, kids have to dream up new games to play." },
+      { place: "Library", text: "Kids borrow books about games at lunch", why: "Kids want ideas for new games, so they look for game books at the Library." }
+    ],
+    d: [
+      [ { place: "Park Pond", text: "Kids throw stones into the Pond" }, { place: "Bus Stop", text: "The Bus Stop gets busier at lunch" } ],
+      [ { place: "Bakery", text: "The Bakery sells balls" }, { place: "School", text: "The School cancels lunch" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt09",
+    spark: "A new crossing guard starts at the Bus Stop.",
+    place: "Bus Stop",
+    chain: [
+      { place: "Bus Stop", text: "Kids feel safe crossing the road at the Bus Stop", why: "A crossing guard watches the road, so kids cross without fear." },
+      { place: "School", text: "More kids walk to school on their own", why: "Safe crossings mean mums and dads let kids walk by themselves." }
+    ],
+    d: [
+      [ { place: "Playground", text: "The Playground gets a new fence" }, { place: "Library", text: "The Library hires a guard too" } ],
+      [ { place: "Bakery", text: "The Bakery opens a second shop" }, { place: "Park Pond", text: "More families walk to the Pond" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt10",
+    spark: "The Bakery starts selling soup on cold days.",
+    place: "Bakery",
+    chain: [
+      { place: "Bakery", text: "Kids warm up with soup after school", why: "Hot soup warms cold hands, so kids stop in on cold days." },
+      { place: "Park Pond", text: "Fewer kids sit by the Pond on cold days", why: "Kids choose the warm Bakery over the cold Pond." }
+    ],
+    d: [
+      [ { place: "School", text: "The School serves soup at lunch" }, { place: "Library", text: "The Library starts a soup club" } ],
+      [ { place: "Playground", text: "Kids play tag at the Playground in the cold" }, { place: "Bus Stop", text: "The Bus Stop gets a heater" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt11",
+    spark: "The Library starts a story time on Saturday mornings.",
+    place: "Library",
+    chain: [
+      { place: "Library", text: "Little kids fill the Library on Saturday", why: "Story time is made for little kids, so they fill the room." },
+      { place: "Bakery", text: "The Bakery sells more hot chocolate on Saturdays", why: "Families walk past the Bakery after story time and stop for a warm drink." }
+    ],
+    d: [
+      [ { place: "School", text: "The School opens on Saturdays" }, { place: "Playground", text: "The Playground closes on Saturdays" } ],
+      [ { place: "Bus Stop", text: "Buses run all night on Saturday" }, { place: "Park Pond", text: "Kids swim in the Pond on Saturday" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt12",
+    spark: "Autumn leaves cover the Playground.",
+    place: "Playground",
+    chain: [
+      { place: "Playground", text: "Kids kick piles of leaves at lunch", why: "Big piles of leaves are fun to kick, so kids cannot resist them." },
+      { place: "School", text: "The school hall has leaves tracked inside", why: "Leaves stick to shoes, and kids carry them inside after lunch." }
+    ],
+    d: [
+      [ { place: "Library", text: "The Library floor is covered in leaves" }, { place: "Bakery", text: "The Bakery runs out of bread" } ],
+      [ { place: "Bus Stop", text: "Leaves pile up at the Bus Stop" }, { place: "Park Pond", text: "The Pond turns orange" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt13",
+    spark: "The library starts a free homework club at 3:30pm.",
+    place: "Library",
+    chain: [
+      { place: "Library", text: "More kids walk to the Library after school", why: "The club is free and starts right after school, so kids walk straight there." },
+      { place: "Bus Stop", text: "The Bus Stop is empty at 4pm", why: "Kids who used to catch the bus now walk to the Library instead, so the Bus Stop is quiet." },
+      { place: "Bakery", text: "The Bakery has leftover snacks at 4:30 and gives them away", why: "Fewer kids pass the Bakery at 4pm, so snacks are left over and the baker shares them." }
+    ],
+    d: [
+      [ { place: "Playground", text: "The Playground is full of kids doing homework" }, { place: "Bakery", text: "The Bakery closes at 3pm" } ],
+      [ { place: "Playground", text: "The Playground gets busier at 3pm" }, { place: "Bakery", text: "The Bakery sells more snacks at 4pm" } ],
+      [ { place: "Park Pond", text: "Ducks gather at the Pond at 4:30" }, { place: "School", text: "The School stays open until 5pm" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt14",
+    spark: "The school plants a veggie garden.",
+    place: "School",
+    chain: [
+      { place: "School", text: "Kids grow tomatoes and carrots at school", why: "The new garden gives kids a place to plant and grow food." },
+      { place: "Bakery", text: "The Bakery buys school tomatoes for sandwiches", why: "The Bakery needs fresh tomatoes, and the school garden grows plenty." },
+      { place: "School", text: "The school uses the money to plant more veggies", why: "Selling tomatoes brings in money, and the school spends it on more seeds and plants." }
+    ],
+    d: [
+      [ { place: "Playground", text: "Kids plant flowers at the Playground" }, { place: "Library", text: "The Library grows herbs on the roof" } ],
+      [ { place: "Bus Stop", text: "The Bakery sells tomatoes at the Bus Stop" }, { place: "Park Pond", text: "Tomatoes grow wild by the Pond" } ],
+      [ { place: "Bakery", text: "The Bakery gives tomatoes away for free" }, { place: "Playground", text: "The Playground turns into a farm" } ]
+    ],
+    loop: { type: "reinforcing", why: "More veggies mean more sales, and more sales mean more veggies to grow." },
+    fix: null
+  },
+  {
+    id: "rt15",
+    spark: "The town cleans the Park Pond.",
+    place: "Park Pond",
+    chain: [
+      { place: "Park Pond", text: "Ducks and frogs come back to the Pond", why: "Clean water is a good home, so ducks and frogs return." },
+      { place: "Playground", text: "More families visit the Playground near the Pond", why: "A clean Pond with ducks is a lovely spot, so families come to enjoy it." },
+      { place: "Park Pond", text: "More people care for the Pond and keep it clean", why: "People who love the Pond look after it, so it stays clean for the ducks." }
+    ],
+    d: [
+      [ { place: "Library", text: "The Library opens a Pond club" }, { place: "Bakery", text: "The Bakery sells fish food" } ],
+      [ { place: "School", text: "The School moves lessons to the Pond" }, { place: "Bus Stop", text: "Buses stop at the Pond now" } ],
+      [ { place: "Bakery", text: "The Bakery starts a Pond picnic menu" }, { place: "School", text: "The School bans swimming in the Pond" } ]
+    ],
+    loop: { type: "reinforcing", why: "A clean Pond brings people, and people keep the Pond clean." },
+    fix: null
+  },
+  {
+    id: "rt16",
+    spark: "The Bakery starts a bread of the week.",
+    place: "Bakery",
+    chain: [
+      { place: "Bakery", text: "Kids try the new bread each week", why: "A new bread each week is fun to taste, so kids keep coming back." },
+      { place: "School", text: "Kids trade bread at lunch and talk about it", why: "Kids love to share tastes, and lunch at school is where they swap food." },
+      { place: "Bakery", text: "The baker hears what kids like and bakes more of it", why: "Kids tell the baker their favourites, so the baker makes more of the best ones." }
+    ],
+    d: [
+      [ { place: "Library", text: "The Library lends out bread recipes" }, { place: "Park Pond", text: "Kids feed the new bread to ducks" } ],
+      [ { place: "Playground", text: "Kids build bread houses at the Playground" }, { place: "Bus Stop", text: "The Bus Stop sells bread" } ],
+      [ { place: "School", text: "The School starts baking bread" }, { place: "Library", text: "The Library stops lending books" } ]
+    ],
+    loop: { type: "reinforcing", why: "Kids taste, kids talk, and the baker listens, so the bread keeps getting better." },
+    fix: null
+  },
+  {
+    id: "rt17",
+    spark: "The Library puts a book swap box by the door.",
+    place: "Library",
+    chain: [
+      { place: "Library", text: "Kids drop old books in the box", why: "The box is right by the door, so it is easy to drop a book in." },
+      { place: "Playground", text: "Kids swap books at the Playground at lunch", why: "Kids take books from the box and swap them where they play at lunch." },
+      { place: "Library", text: "Kids bring the swapped books back to the Library box", why: "After swapping, kids return books to the box so others can enjoy them." }
+    ],
+    d: [
+      [ { place: "School", text: "The School starts a book box too" }, { place: "Bakery", text: "The Bakery gives books with bread" } ],
+      [ { place: "Bus Stop", text: "Kids read at the Bus Stop" }, { place: "Park Pond", text: "The Pond gets a book box" } ],
+      [ { place: "Bakery", text: "The Bakery starts a book box" }, { place: "School", text: "Kids keep all the books at home" } ]
+    ],
+    loop: { type: "reinforcing", why: "Books go out, books come back, and the box never runs dry." },
+    fix: null
+  },
+  {
+    id: "rt18",
+    spark: "The bus starts running every 15 minutes.",
+    place: "Bus Stop",
+    chain: [
+      { place: "Bus Stop", text: "More kids catch the bus to school", why: "A bus every 15 minutes means less waiting, so more kids ride." },
+      { place: "School", text: "Fewer cars crowd the School gate", why: "More kids on the bus means fewer cars dropping kids off." },
+      { place: "Bus Stop", text: "The bus stays on time because the road is clear", why: "With fewer cars, the road is clear, so the bus runs on time." }
+    ],
+    d: [
+      [ { place: "Library", text: "The Library opens earlier" }, { place: "Playground", text: "Kids play at the Bus Stop" } ],
+      [ { place: "Bakery", text: "The Bakery sells breakfast to drivers" }, { place: "Park Pond", text: "Families drive to the Pond" } ],
+      [ { place: "School", text: "The School starts later" }, { place: "Bakery", text: "The Bakery delivers bread by bus" } ]
+    ],
+    loop: { type: "reinforcing", why: "A bus on time brings more kids, and more kids on the bus keeps the road clear." },
+    fix: null
+  },
+  {
+    id: "rt19",
+    spark: "The Playground gets new lights for winter evenings.",
+    place: "Playground",
+    chain: [
+      { place: "Playground", text: "More kids play at the Playground after dark", why: "Lights make the Playground bright at night, so kids stay to play." },
+      { place: "Library", text: "The Library is quiet because kids stay out playing", why: "Kids who used to read at the Library now stay at the Playground instead." },
+      { place: "Playground", text: "Even more kids come because their friends are there", why: "Kids follow their friends, so a busy Playground pulls in even more kids." }
+    ],
+    d: [
+      [ { place: "School", text: "The School stays open at night" }, { place: "Park Pond", text: "The Pond lights up at night" } ],
+      [ { place: "Bakery", text: "The Bakery stays open late" }, { place: "Bus Stop", text: "Kids read at the Bus Stop" } ],
+      [ { place: "Library", text: "The Library gets busier at night" }, { place: "School", text: "Kids play at school at night" } ]
+    ],
+    loop: { type: "reinforcing", why: "More kids playing brings more friends, and more friends bring more kids." },
+    fix: {
+      bad: "Kids stay out too late and are tired at school the next day.",
+      levers: [
+        { text: "The lights switch off at 6pm", tier: "best", why: "The lights set the end of play, so kids head home before it gets too late." },
+        { text: "The Library runs a cosy reading hour at 5pm", tier: "helps", why: "Some kids choose reading instead of late play, which helps a little." },
+        { text: "Add even brighter lights", tier: "worse", why: "Brighter lights would keep kids out even later, which makes the tired mornings worse." }
+      ]
+    }
+  },
+  {
+    id: "rt20",
+    spark: "The school starts selling icy poles at lunch.",
+    place: "School",
+    chain: [
+      { place: "School", text: "Kids buy icy poles every lunch", why: "Icy poles are cold and sweet, so kids queue up for one each lunch." },
+      { place: "Playground", text: "Wrappers pile up around the Playground", why: "Kids eat icy poles at the Playground and drop the wrappers there." },
+      { place: "School", text: "The school sells icy poles only on Fridays now", why: "The mess was too big, so the school cuts back to keep the yard clean." }
+    ],
+    d: [
+      [ { place: "Bakery", text: "The Bakery starts selling icy poles" }, { place: "Library", text: "The Library sells icy poles" } ],
+      [ { place: "Park Pond", text: "Kids swim in the Pond to cool down" }, { place: "Bus Stop", text: "Kids eat icy poles at the Bus Stop" } ],
+      [ { place: "Bakery", text: "The Bakery bans icy poles" }, { place: "Playground", text: "The Playground bans icy poles" } ]
+    ],
+    loop: { type: "balancing", why: "When the mess grows too big, the school pulls back, which stops the mess from growing more." },
+    fix: {
+      bad: "The yard stays messy and kids have nowhere clean to play.",
+      levers: [
+        { text: "Put big bins next to the icy pole stall", tier: "best", why: "Bins right where kids finish their icy poles catch the wrappers before they reach the ground." },
+        { text: "Kids take turns as yard helpers", tier: "helps", why: "Helpers pick up wrappers, which helps a little, but the wrappers still come every day." },
+        { text: "Sell icy poles at recess too", tier: "worse", why: "More icy poles would mean even more wrappers, which makes the mess worse." }
+      ]
+    }
+  },
+  {
+    id: "rt21",
+    spark: "Someone leaves bread for the ducks every day.",
+    place: "Park Pond",
+    chain: [
+      { place: "Park Pond", text: "More ducks move to the Pond", why: "Free bread every day is a feast, so more ducks come to stay." },
+      { place: "Bakery", text: "The Bakery sells more bread to duck feeders", why: "People who feed ducks buy bread first, and the Bakery is where bread comes from." },
+      { place: "Park Pond", text: "Even more ducks arrive because there is so much bread", why: "Word spreads among ducks, and more bread means room for more ducks." }
+    ],
+    d: [
+      [ { place: "Playground", text: "Ducks move to the Playground" }, { place: "Library", text: "The Library feeds the ducks" } ],
+      [ { place: "School", text: "The School bakes bread for ducks" }, { place: "Bus Stop", text: "People buy bread at the Bus Stop" } ],
+      [ { place: "Bakery", text: "The Bakery runs out of bread" }, { place: "School", text: "Ducks visit the School" } ]
+    ],
+    loop: { type: "reinforcing", why: "More bread brings more ducks, and more ducks bring more bread buyers." },
+    fix: {
+      bad: "The Pond gets dirty and the ducks get sick from too much bread.",
+      levers: [
+        { text: "A sign says feed ducks greens, not bread", tier: "best", why: "The sign stops the bread at the start, before the ducks crowd in." },
+        { text: "The Library runs a duck care poster", tier: "helps", why: "Some kids learn and bring greens, which helps a little." },
+        { text: "Leave twice as much bread", tier: "worse", why: "More bread would bring more ducks and dirtier water, which makes it worse." }
+      ]
+    }
+  },
+  {
+    id: "rt22",
+    spark: "The Bakery gives free day-old bread to the school.",
+    place: "Bakery",
+    chain: [
+      { place: "School", text: "Kids eat free bread rolls at lunch", why: "Free rolls at lunch are a gift, so kids eat them gladly." },
+      { place: "Playground", text: "Kids share rolls and play longer at lunch", why: "Full tummies and shared food make lunch fun, so kids play longer." },
+      { place: "School", text: "Kids ask the Bakery for the free rolls again next week", why: "Kids loved the rolls, so they ask the Bakery for more." }
+    ],
+    d: [
+      [ { place: "Library", text: "The Library gives away books" }, { place: "Park Pond", text: "Ducks eat the free bread" } ],
+      [ { place: "Bus Stop", text: "Kids share rolls at the Bus Stop" }, { place: "Library", text: "The Library starts a lunch club" } ],
+      [ { place: "Bakery", text: "The Bakery gives rolls to the ducks" }, { place: "Playground", text: "The Playground sells bread" } ]
+    ],
+    loop: { type: "reinforcing", why: "Kids ask, the Bakery gives, and kids ask again." },
+    fix: {
+      bad: "The Bakery runs out of bread to sell and has to stop giving.",
+      levers: [
+        { text: "The Bakery gives bread on Mondays only", tier: "best", why: "One day a week keeps the gift going without emptying the shelves." },
+        { text: "Kids say thank you with drawings for the Bakery wall", tier: "helps", why: "Thank you drawings cheer the baker, which helps a little, but they do not fill the shelves." },
+        { text: "Give away fresh bread too", tier: "worse", why: "Giving away fresh bread would empty the shop even faster, which makes it worse." }
+      ]
+    }
+  },
+  {
+    id: "rt23",
+    spark: "The Library lends out board games for the weekend.",
+    place: "Library",
+    chain: [
+      { place: "Library", text: "Kids borrow board games every Friday", why: "Games to take home for the weekend are fun, so kids borrow one each Friday." },
+      { place: "Playground", text: "Kids play the games at the Playground on Saturday", why: "Saturday is play day, and the Playground is where friends meet." },
+      { place: "Library", text: "More kids join the Library to borrow games", why: "Kids hear about the games and join the Library so they can borrow one too." }
+    ],
+    d: [
+      [ { place: "School", text: "The School lends out games too" }, { place: "Bakery", text: "The Bakery lends out games" } ],
+      [ { place: "Bus Stop", text: "The Bus Stop gets board games" }, { place: "Park Pond", text: "Kids leave games by the Pond" } ],
+      [ { place: "Bakery", text: "The Bakery joins the Library" }, { place: "School", text: "Kids stop joining the Library" } ]
+    ],
+    loop: { type: "reinforcing", why: "More games out bring more kids in, and more kids mean more games borrowed." },
+    fix: {
+      bad: "Games come back with missing pieces and the Library stops lending them.",
+      levers: [
+        { text: "Kids check the pieces with a librarian before they borrow", tier: "best", why: "Checking at the start catches missing pieces before the game leaves the Library." },
+        { text: "A poster shows how to pack a game away", tier: "helps", why: "The poster helps some kids pack games well, which helps a little." },
+        { text: "Lend out twice as many games", tier: "worse", why: "More games out would mean more missing pieces, which makes it worse." }
+      ]
+    }
+  },
+  {
+    id: "rt24",
+    spark: "The bus fare drops to free for kids.",
+    place: "Bus Stop",
+    chain: [
+      { place: "Bus Stop", text: "More kids ride the bus to school", why: "A free ride is hard to pass up, so more kids hop on the bus." },
+      { place: "School", text: "The School gate is clear of cars in the morning", why: "More kids on the bus means fewer cars dropping kids off." },
+      { place: "Bus Stop", text: "The bus company adds more buses because so many kids ride", why: "Lots of riders show the bus is needed, so the company adds more buses." }
+    ],
+    d: [
+      [ { place: "Library", text: "The Library gets a free bus" }, { place: "Playground", text: "Kids ride the bus to the Playground" } ],
+      [ { place: "Bakery", text: "The Bakery sells breakfast on the bus" }, { place: "Park Pond", text: "Families drive to the Pond" } ],
+      [ { place: "School", text: "The School buys its own buses" }, { place: "Bakery", text: "The Bakery gives free rides" } ]
+    ],
+    loop: { type: "reinforcing", why: "More riders mean more buses, and more buses bring even more riders." },
+    fix: {
+      bad: "Buses get too crowded and kids wait for the next one.",
+      levers: [
+        { text: "Buses run more often in the morning", tier: "best", why: "More buses at the busy time spread kids out before the crowd builds." },
+        { text: "Kids who live close walk on sunny days", tier: "helps", why: "Walking frees a few seats, which helps a little." },
+        { text: "Make the bus free for grown-ups too", tier: "worse", why: "More grown-ups would fill the buses even more, which makes it worse." }
+      ]
+    }
+  },
+  {
+    id: "rt25",
+    spark: "The Playground gets a water play area for summer.",
+    place: "Playground",
+    chain: [
+      { place: "Playground", text: "Kids splash at the Playground on hot days", why: "Water play cools kids down, so they splash on hot days." },
+      { place: "Bakery", text: "Kids buy icy drinks at the Bakery after playing", why: "Splashing makes kids thirsty, and the Bakery is close by." },
+      { place: "Playground", text: "More kids come because their friends say the water play is fun", why: "Kids tell their friends, and friends come to try it too." }
+    ],
+    d: [
+      [ { place: "Park Pond", text: "Kids swim in the Pond" }, { place: "Library", text: "The Library gets a water slide" } ],
+      [ { place: "Bus Stop", text: "Kids buy drinks at the Bus Stop" }, { place: "School", text: "The School sells icy drinks" } ],
+      [ { place: "Bakery", text: "The Bakery opens a water park" }, { place: "Library", text: "Kids stop coming to the Playground" } ]
+    ],
+    loop: { type: "reinforcing", why: "Fun water play brings friends, and friends bring more friends." },
+    fix: {
+      bad: "The water play area gets muddy and slippery and kids slip over.",
+      levers: [
+        { text: "Put non-slip mats around the water play", tier: "best", why: "Mats grip wet feet, so kids stop slipping before anyone falls." },
+        { text: "The Library lends out towels for soggy kids", tier: "helps", why: "Towels help kids dry off, which helps a little, but they do not fix the mud." },
+        { text: "Add more water jets", tier: "worse", why: "More water would make it even muddier and more slippery, which makes it worse." }
+      ]
+    }
+  },
+  {
+    id: "rt26",
+    spark: "The school starts a walking bus from the Park Pond.",
+    place: "School",
+    chain: [
+      { place: "Park Pond", text: "Kids meet at the Pond each morning", why: "The Pond is the meeting spot, so kids gather there before school." },
+      { place: "Bus Stop", text: "The Bus Stop is quiet because kids walk together", why: "Kids who walk together do not need the bus, so the Bus Stop is quiet." },
+      { place: "School", text: "Kids arrive at school awake and ready for the day", why: "A morning walk wakes kids up, so they arrive bright and ready." }
+    ],
+    d: [
+      [ { place: "Playground", text: "Kids meet at the Playground instead" }, { place: "Library", text: "Kids meet at the Library instead" } ],
+      [ { place: "Bakery", text: "The Bakery gets busier in the morning" }, { place: "School", text: "The School gate gets crowded" } ],
+      [ { place: "Playground", text: "Kids arrive at the Playground tired" }, { place: "Bus Stop", text: "Kids arrive at the Bus Stop early" } ]
+    ],
+    loop: null,
+    fix: {
+      bad: "Rainy mornings stop the walking bus and kids go back to cars.",
+      levers: [
+        { text: "Grown-ups take turns leading the walk, rain or shine", tier: "best", why: "A roster of leaders keeps the walk going even when it rains." },
+        { text: "The Library lends out umbrellas", tier: "helps", why: "Umbrellas help on rainy days, which helps a little, but they do not lead the walk." },
+        { text: "Cancel the walk if one leader is away", tier: "worse", why: "Cancelling often would end the walking habit, which makes it worse." }
+      ]
+    }
+  },
+  {
+    id: "rt27",
+    spark: "A storm blows a big branch into the Park Pond.",
+    place: "Park Pond",
+    chain: [
+      { place: "Park Pond", text: "The branch blocks the ducks' favourite corner", why: "The big branch fell right where ducks like to rest, so they cannot use it." },
+      { place: "Playground", text: "Kids crowd the Playground because the Pond path is shut", why: "With the Pond path shut, kids look for another place to play, and the Playground is close." },
+      { place: "School", text: "Kids arrive at school muddy from the crowded Playground", why: "A crowded Playground means muddy shoes, and muddy shoes go into school." }
+    ],
+    d: [
+      [ { place: "Library", text: "The Library roof gets a branch too" }, { place: "Bakery", text: "The Bakery roof leaks" } ],
+      [ { place: "Library", text: "The Library closes for the day" }, { place: "Bus Stop", text: "Kids wait at the Bus Stop all day" } ],
+      [ { place: "Bakery", text: "Kids arrive at the Bakery muddy" }, { place: "Park Pond", text: "The Pond dries up" } ]
+    ],
+    loop: null,
+    fix: {
+      bad: "The branch stays all winter and the Pond corner stays empty.",
+      levers: [
+        { text: "The town clears the branch the next morning", tier: "best", why: "Clearing it fast opens the path before ducks and kids find new habits." },
+        { text: "Kids make a poster asking people to keep the Pond clean", tier: "helps", why: "The poster helps a little, but it does not move the branch." },
+        { text: "Leave the branch and fence off the Pond", tier: "worse", why: "Fencing off the Pond would keep everyone away, which makes it worse." }
+      ]
+    }
+  },
+  {
+    id: "rt28",
+    spark: "The Bakery closes for two weeks for repairs.",
+    place: "Bakery",
+    chain: [
+      { place: "Bakery", text: "No fresh bread for two weeks", why: "Repairs shut the ovens, so no fresh bread is baked." },
+      { place: "School", text: "Kids bring lunch from home instead", why: "With no Bakery lunch, families pack lunch at home." },
+      { place: "Playground", text: "Kids swap lunch snacks at the Playground", why: "Packed lunches are fun to swap, and the Playground is where kids share at lunch." }
+    ],
+    d: [
+      [ { place: "Library", text: "The Library starts selling bread" }, { place: "Park Pond", text: "The Pond closes for repairs" } ],
+      [ { place: "Bus Stop", text: "Kids eat lunch at the Bus Stop" }, { place: "Library", text: "The Library lends out lunch boxes" } ],
+      [ { place: "School", text: "Kids stop eating lunch" }, { place: "Bus Stop", text: "The Bus Stop sells snacks" } ]
+    ],
+    loop: null,
+    fix: {
+      bad: "The Bakery loses regulars who found a new lunch spot.",
+      levers: [
+        { text: "The Bakery puts a note on the door saying when it reopens", tier: "best", why: "A clear date tells regulars when to come back, so they do not drift away." },
+        { text: "The School shares lunch ideas for two weeks", tier: "helps", why: "Lunch ideas help families for now, which helps a little." },
+        { text: "Stay shut for another two weeks", tier: "worse", why: "Staying shut longer would lose even more regulars, which makes it worse." }
+      ]
+    }
+  },
+  {
+    id: "rt29",
+    spark: "The Library roof leaks in heavy rain.",
+    place: "Library",
+    chain: [
+      { place: "Library", text: "Rain drips on the picture books", why: "The leak is over the picture book shelf, so the rain drips right on the books." },
+      { place: "School", text: "Kids cannot borrow new books for a week", why: "Wet books cannot be lent out, so kids wait for new ones." },
+      { place: "Playground", text: "Kids play at the Playground instead of reading at lunch", why: "With no new books, kids choose play at lunch instead of reading." }
+    ],
+    d: [
+      [ { place: "School", text: "The School roof leaks too" }, { place: "Bakery", text: "The Bakery roof leaks" } ],
+      [ { place: "Bus Stop", text: "Kids borrow books at the Bus Stop" }, { place: "Park Pond", text: "The Pond floods the Library" } ],
+      [ { place: "Library", text: "Kids read at the Library at lunch" }, { place: "Bakery", text: "Kids eat lunch at the Bakery" } ]
+    ],
+    loop: null,
+    fix: {
+      bad: "Books get ruined and the Library loses its best stories.",
+      levers: [
+        { text: "Move the books away from the leak on the first rainy day", tier: "best", why: "Moving books fast keeps them dry before the drip gets worse." },
+        { text: "Kids read the wet books carefully and dry the pages", tier: "helps", why: "Drying pages saves a few books, which helps a little." },
+        { text: "Leave the books under the leak", tier: "worse", why: "Leaving them there would ruin more books, which makes it worse." }
+      ]
+    }
+  },
+  {
+    id: "rt30",
+    spark: "The bus timetable changes and the school bus leaves ten minutes earlier.",
+    place: "Bus Stop",
+    chain: [
+      { place: "Bus Stop", text: "Kids miss the bus if they leave home late", why: "The bus leaves ten minutes sooner, so late kids do not make it." },
+      { place: "School", text: "Late kids arrive at school after the bell", why: "Kids who miss the bus walk or wait, so they reach school late." },
+      { place: "Playground", text: "Late kids miss the morning game at the Playground", why: "The morning game starts before school, and late kids are not there yet." }
+    ],
+    d: [
+      [ { place: "Library", text: "The Library opens ten minutes earlier" }, { place: "Bakery", text: "The Bakery opens ten minutes earlier" } ],
+      [ { place: "Bakery", text: "The Bakery starts a late bus" }, { place: "Park Pond", text: "The Pond opens later" } ],
+      [ { place: "Library", text: "The Library fines late kids" }, { place: "School", text: "The School starts later" } ]
+    ],
+    loop: null,
+    fix: {
+      bad: "Kids keep missing the bus and start to dread mornings.",
+      levers: [
+        { text: "The School puts the new bus time on the front gate", tier: "best", why: "A big sign at the gate tells every family the new time before the first morning." },
+        { text: "The Library lends out alarm clocks", tier: "helps", why: "An alarm helps some kids leave on time, which helps a little." },
+        { text: "Move the bus even earlier", tier: "worse", why: "An even earlier bus would mean more kids miss it, which makes it worse." }
+      ]
+    }
+  },
+  {
+    id: "rt31",
+    spark: "The school holds a sports day at the Playground.",
+    place: "School",
+    chain: [
+      { place: "Playground", text: "Kids race and jump at the Playground all morning", why: "Sports day is held at the Playground, so that is where the races happen." },
+      { place: "Bakery", text: "The Bakery sells out of sausage rolls at lunch", why: "Hungry sports day families stop at the Bakery, and there are lots of them." },
+      { place: "Park Pond", text: "Families picnic by the Pond after sports day", why: "After a big morning, families want a calm spot, and the Pond is the calmest place nearby." }
+    ],
+    d: [
+      [ { place: "School", text: "Kids race in the school hall" }, { place: "Library", text: "The Library hosts sports day" } ],
+      [ { place: "Bus Stop", text: "The Bus Stop sells sausage rolls" }, { place: "Park Pond", text: "The Pond hosts a swim race" } ],
+      [ { place: "Bakery", text: "Families picnic at the Bakery" }, { place: "School", text: "Families picnic at the School" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt32",
+    spark: "Spring rain fills the Park Pond to the top.",
+    place: "Park Pond",
+    chain: [
+      { place: "Park Pond", text: "Frogs sing loudly at the Pond at night", why: "Full ponds make frogs happy, so they sing all night." },
+      { place: "Library", text: "Kids borrow books about frogs", why: "Frog songs make kids curious, so they look for frog books at the Library." },
+      { place: "School", text: "Kids draw frog pictures in class", why: "Kids who read about frogs want to draw them, and class is where drawing happens." }
+    ],
+    d: [
+      [ { place: "Playground", text: "Frogs move to the Playground" }, { place: "Bakery", text: "The Bakery sells frog cakes" } ],
+      [ { place: "School", text: "The School teaches frog songs" }, { place: "Bus Stop", text: "The Bus Stop floods" } ],
+      [ { place: "Playground", text: "Kids build a frog pond at the Playground" }, { place: "Library", text: "The Library keeps live frogs" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt33",
+    spark: "The Bakery hires a new baker who loves spices.",
+    place: "Bakery",
+    chain: [
+      { place: "Bakery", text: "The Bakery smells like cinnamon in the morning", why: "The new baker uses cinnamon, so the smell fills the shop." },
+      { place: "School", text: "Kids talk about the new buns at school", why: "Kids who taste the buns cannot wait to tell their friends at school." },
+      { place: "Bus Stop", text: "Kids share buns at the Bus Stop after school", why: "Kids buy buns on the way home and share them while they wait for the bus." }
+    ],
+    d: [
+      [ { place: "Library", text: "The Library smells like cinnamon" }, { place: "Park Pond", text: "The Pond smells like cinnamon" } ],
+      [ { place: "Playground", text: "Kids bake buns at the Playground" }, { place: "Bus Stop", text: "The Bus Stop sells buns" } ],
+      [ { place: "Library", text: "The Library bans buns" }, { place: "Park Pond", text: "Kids throw buns in the Pond" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt34",
+    spark: "A famous author visits the Library.",
+    place: "Library",
+    chain: [
+      { place: "Library", text: "Kids queue to meet the author", why: "A famous author is a rare treat, so kids queue up to meet them." },
+      { place: "School", text: "Kids write their own stories at school", why: "Meeting an author makes kids want to write, and school is where writing happens." },
+      { place: "Playground", text: "Kids act out their stories at the Playground", why: "Stories are more fun acted out, and the Playground is the stage." }
+    ],
+    d: [
+      [ { place: "Bakery", text: "The author signs buns at the Bakery" }, { place: "School", text: "The author teaches at the School" } ],
+      [ { place: "Library", text: "The Library stops lending books" }, { place: "Bus Stop", text: "The author waits at the Bus Stop" } ],
+      [ { place: "School", text: "Kids read stories in class" }, { place: "Park Pond", text: "Kids tell stories to the ducks" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt35",
+    spark: "A new bus route stops at the Bus Stop on weekends.",
+    place: "Bus Stop",
+    chain: [
+      { place: "Bus Stop", text: "Families catch the bus to town on Saturday", why: "A new weekend bus makes town trips easy, so families ride it." },
+      { place: "Park Pond", text: "Families visit the Pond on the way home", why: "The Pond is on the way home from the bus, so families stop to enjoy it." },
+      { place: "Bakery", text: "The Bakery sells more cakes on Saturday afternoons", why: "Families passing by after a day out stop for a treat." }
+    ],
+    d: [
+      [ { place: "School", text: "The School opens on Saturday" }, { place: "Library", text: "The Library runs a Saturday bus" } ],
+      [ { place: "Playground", text: "The Playground gets a bus stop" }, { place: "Bakery", text: "The Bakery closes on Saturdays" } ],
+      [ { place: "Park Pond", text: "The Pond sells cakes" }, { place: "School", text: "The School sells cakes" } ]
+    ],
+    loop: null,
+    fix: null
+  },
+  {
+    id: "rt36",
+    spark: "The Playground gets a new sandpit.",
+    place: "Playground",
+    chain: [
+      { place: "Playground", text: "Little kids build sandcastles at the Playground", why: "A new sandpit is made for building, so little kids build castles in it." },
+      { place: "Library", text: "Kids borrow books about castles", why: "Sandcastle building makes kids curious about real castles, so they look for castle books." },
+      { place: "School", text: "Kids build castle models in class", why: "Kids who read about castles want to build them, and class is where models get made." }
+    ],
+    d: [
+      [ { place: "Park Pond", text: "Kids build sandcastles by the Pond" }, { place: "Bakery", text: "The Bakery sells sandcastle cakes" } ],
+      [ { place: "School", text: "The School teaches castle history" }, { place: "Bus Stop", text: "The Bus Stop gets a sandpit" } ],
+      [ { place: "Playground", text: "The Playground turns into a castle" }, { place: "Library", text: "The Library builds a real castle" } ]
+    ],
+    loop: null,
+    fix: null
+  }
+];
+/* __SPARKS_END__ */
+
+/* ---- game state ---- */
+var S = {
+  screen: "home",
+  level: 1,
+  session: null,
+  round: null,
+  bookOpen: false
+};
+function isUnlocked(n){ return n <= store.unlocked; }
+function levelPool(links){
+  return SPARKS.filter(function(sp){ return sp.chain.length === links; });
+}
+function loopPool(){
+  return SPARKS.filter(function(sp){ return sp.chain.length === 3 && sp.loop; });
+}
+function fixPool(){
+  return SPARKS.filter(function(sp){ return sp.chain.length === 3 && sp.fix; });
+}
+function newSession(level){
+  var lv = LEVELS[level - 1];
+  var types = [];
+  var i;
+  for(i = 0; i < ROUNDS_PER_GAME; i++) types.push("predict");
+  if(lv.loop) types[0] = "loop";
+  if(lv.fix) types[1] = "fix";
+  types = shuffle(types);
+  var used = [];
+  var rounds = [];
+  var predictPool = shuffle(levelPool(lv.links));
+  var lPool = shuffle(loopPool());
+  var fPool = shuffle(fixPool());
+  var pi = 0, li = 0, fi = 0;
+  function take(pool, idx){
+    while(idx < pool.length && used.indexOf(pool[idx].id) >= 0) idx++;
+    if(idx >= pool.length) return null;
+    used.push(pool[idx].id);
+    return {spark: pool[idx], next: idx + 1};
+  }
+  for(i = 0; i < types.length; i++){
+    var t = types[i];
+    var got = null;
+    if(t === "predict"){ got = take(predictPool, pi); if(got) pi = got.next; }
+    else if(t === "loop"){ got = take(lPool, li); if(got) li = got.next; }
+    else if(t === "fix"){ got = take(fPool, fi); if(got) fi = got.next; }
+    if(!got){
+      /* Pool ran short (should not happen with 36 sparks): fall back to a
+         predict round from any unused spark. */
+      var any = shuffle(SPARKS.filter(function(sp){ return used.indexOf(sp.id) < 0; }));
+      if(!any.length) any = shuffle(SPARKS);
+      got = {spark: any[0]};
+      used.push(any[0].id);
+      t = "predict";
+    }
+    rounds.push({type: t, spark: got.spark});
+  }
+  return {level: level, rounds: rounds, idx: 0, points: 0, max: 0};
+}
+function startSession(){
+  S.session = newSession(S.level);
+  dealRound();
+  render();
+}
+function dealRound(){
+  var r = S.session.rounds[S.session.idx];
+  if(r.type === "predict"){
+    S.round = {type: "predict", spark: r.spark, step: 0, picks: [], options: optionsForStep(r.spark, 0, null), sel: -1, onBranch: false, branchPlace: null, done: false};
+    S.screen = "play";
+  } else if(r.type === "loop"){
+    S.round = {type: "loop", spark: r.spark, answered: false, correct: false};
+    S.screen = "loop";
+  } else {
+    S.round = {type: "fix", spark: r.spark, picked: -1};
+    S.screen = "fixit";
+  }
+}
+/* Options for one prediction step. On the true path the options are the true
+   next link plus its two distractors. Once a pick goes off the true path,
+   the next step follows from the place just picked, and no later pick can
+   score - the reveal then shows the true chain and explains each link. */
+function optionsForStep(spark, step, fromPlace){
+  if(fromPlace === null){
+    var opts = [{place: spark.chain[step].place, text: spark.chain[step].text, correct: true}];
+    spark.d[step].forEach(function(dd){
+      opts.push({place: dd.place, text: dd.text, correct: false});
+    });
+    return shuffle(opts);
+  }
+  var lead = NEXT[fromPlace];
+  var others = PLACES.filter(function(p){ return p.name !== lead.place; });
+  others = shuffle(others).slice(0, 2);
+  var out = [{place: lead.place, text: lead.text, correct: false}];
+  others.forEach(function(p){
+    var g = GENERIC[p.name];
+    out.push({place: p.name, text: g[Math.floor(Math.random() * g.length)], correct: false});
+  });
+  return shuffle(out);
+}
+function pickOption(i){
+  if(!S.round || S.round.type !== "predict" || S.round.done) return;
+  S.round.sel = i;
+  render();
+}
+function confirmStep(){
+  var r = S.round;
+  if(!r || r.type !== "predict" || r.done || r.sel < 0) return;
+  var picked = r.options[r.sel];
+  r.picks.push(picked);
+  if(picked.correct && !r.onBranch){
+    /* stays on the true path */
+  } else {
+    r.onBranch = true;
+    r.branchPlace = picked.place;
+  }
+  r.step++;
+  r.sel = -1;
+  if(r.step >= r.spark.chain.length){
+    r.done = true;
+    scorePredictRound();
+    S.screen = "reveal";
+  } else {
+    r.options = optionsForStep(r.spark, r.step, r.onBranch ? r.branchPlace : null);
+  }
+  render();
+}
+function scorePredictRound(){
+  var r = S.round;
+  var pts = 0;
+  for(var i = 0; i < r.picks.length; i++){
+    if(r.picks[i].correct && !onBranchBefore(i)) pts++;
+    else break;
+  }
+  r.points = pts;
+  r.max = r.spark.chain.length;
+  S.session.points += pts;
+  S.session.max += r.max;
+  if(store.book.indexOf(r.spark.id) < 0){
+    store.book.push(r.spark.id);
+    saveStore();
+  }
+}
+function onBranchBefore(i){
+  /* A pick is only on the true path while every earlier pick was correct. */
+  var r = S.round;
+  for(var k = 0; k < i; k++) if(!r.picks[k].correct) return true;
+  return false;
+}
+function pickLoop(i){
+  var r = S.round;
+  if(!r || r.type !== "loop" || r.answered) return;
+  var want = r.spark.loop.type === "reinforcing" ? 0 : 1;
+  r.answered = true;
+  r.correct = (i === want);
+  r.points = r.correct ? 1 : 0;
+  r.max = 1;
+  S.session.points += r.points;
+  S.session.max += r.max;
+  if(store.book.indexOf(r.spark.id) < 0){
+    store.book.push(r.spark.id);
+    saveStore();
+  }
+  render();
+}
+function pickLever(i){
+  var r = S.round;
+  if(!r || r.type !== "fix" || r.picked >= 0) return;
+  r.picked = i;
+  var lever = r.spark.fix.levers[i];
+  r.points = (lever.tier === "best") ? 1 : 0;
+  r.max = 1;
+  S.session.points += r.points;
+  S.session.max += r.max;
+  if(store.book.indexOf(r.spark.id) < 0){
+    store.book.push(r.spark.id);
+    saveStore();
+  }
+  render();
+}
+function nextRound(){
+  S.session.idx++;
+  if(S.session.idx >= S.session.rounds.length){
+    finishSession();
+  } else {
+    dealRound();
+  }
+  render();
+}
+function finishSession(){
+  var sess = S.session;
+  var pct = sess.max > 0 ? Math.round(100 * sess.points / sess.max) : 0;
+  if(store.best === null || pct > store.best) store.best = pct;
+  store.sessions.push({level: sess.level, points: sess.points, max: sess.max});
+  if(store.sessions.length > 10) store.sessions = store.sessions.slice(-10);
+  /* Unlock: at least 7 of every 10 ripples right across the last two
+     sessions at this level. Unlocking never forces the player up. */
+  var recent = store.sessions.filter(function(s){ return s.level === sess.level; }).slice(-2);
+  var pts = 0, mx = 0;
+  recent.forEach(function(s){ pts += s.points; mx += s.max; });
+  S.unlockedNow = false;
+  if(recent.length === 2 && mx > 0 && pts * 10 >= mx * 7 && sess.level < 4 && store.unlocked === sess.level){
+    store.unlocked = sess.level + 1;
+    S.unlockedNow = true;
+  }
+  saveStore();
+  S.screen = "end";
+}
+function playAgain(){
+  S.session = newSession(S.level);
+  dealRound();
+  render();
+}
+function pickLevel(n){
+  if(!isUnlocked(n)) return;
+  S.level = n;
+  render();
+}
+function goHome(){ S.screen = "home"; render(); }
+function goHowto(){ S.screen = "howto"; render(); }
+function goBook(){ S.screen = "book"; render(); }
+function startOver(){
+  store = {unlocked: 1, book: [], best: null, sessions: []};
+  saveStore();
+  S.level = 1;
+  S.screen = "home";
+  render();
+}
+
+/* ---- rendering ---- */
+function mapHTML(litPlaces, sparkPlace){
+  var h = '<div class="map">';
+  PLACES.forEach(function(p){
+    var cls = "place";
+    if(p.name === sparkPlace) cls += " spark";
+    if(litPlaces && litPlaces.indexOf(p.name) >= 0) cls += " lit";
+    h += '<div class="' + cls + '"><span class="em">' + p.em + '</span><span class="nm">' + esc(p.name) + '</span></div>';
+  });
+  return h + "</div>";
+}
+function levelButtons(){
+  var h = '<div class="levels">';
+  for(var n = 1; n <= 4; n++){
+    var locked = !isUnlocked(n);
+    h += '<button onclick="pickLevel(' + n + ')" class="' + (S.level === n ? "sel" : "") + (locked ? " locked" : "") + '">' + LEVELS[n - 1].name + (locked ? " 🔒" : "") + '</button>';
+  }
+  return h + "</div>";
+}
+function renderHome(){
+  var h = "<h1>🏘️ Ripple Town</h1>";
+  h += '<p class="tagline">One small change. What happens next?</p>';
+  h += '<p>A game for practising cause and effect in a pretend town.</p>';
+  h += "<p>Pick your level:</p>";
+  h += levelButtons();
+  h += '<p class="small muted">' + esc(LEVELS[S.level - 1].blurb) + '</p>';
+  h += '<p class="small muted">A level opens when you get 7 of every 10 ripples right across your last two games at the level below. Levels never drop - replay any level any time.</p>';
+  h += '<p><button class="primary" onclick="startSession()">Play</button>';
+  h += '<button onclick="goHowto()">How to play</button>';
+  h += '<button onclick="goBook()">Ripple Book (' + store.book.length + ' chains)</button></p>';
+  if(store.best !== null) h += '<p class="small">Best game so far: ' + store.best + '% of ripples right.</p>';
+  h += '<p><button onclick="startOver()">Start over</button> <span class="small muted">Clears levels, Ripple Book and best score on this device.</span></p>';
+  return h;
+}
+function renderHowto(){
+  var h = "<h2>How to play</h2>";
+  h += '<p>A game for practising cause and effect in a pretend town.</p>';
+  h += '<div class="howto-grid">';
+  h += '<div class="card"><h3>1. The Spark</h3><p>Something changes in the town - a new skate park, free bread, a week of rain. The map lights up where it happens.</p></div>';
+  h += '<div class="card"><h3>2. Predict</h3><p>Talk it out before you tap. Pick what happens first, then what happens after that. One tap picks a card - "See what happens" locks it in.</p></div>';
+  h += '<div class="card"><h3>3. The Reveal</h3><p>Watch the true chain play out, ripple by ripple. See where your guess matched and where the town surprised you - with one sentence explaining each link.</p></div>';
+  h += "</div>";
+  h += '<p>Some games add a <strong>Loop Spotter</strong> round: does the loop grow bigger and bigger, or settle back down? And a <strong>Fix It</strong> round: pick the lever that changes a bad ending.</p>';
+  h += '<p class="small muted">Five rounds a game, about ten minutes. No timers, no streaks, no coins. Every chain you discover goes in your Ripple Book.</p>';
+  h += '<p><button class="primary" onclick="goHome()">Back</button></p>';
+  return h;
+}
+function renderPlay(){
+  var r = S.round;
+  var sp = r.spark;
+  var lit = [sp.place];
+  r.picks.forEach(function(pk){ if(lit.indexOf(pk.place) < 0) lit.push(pk.place); });
+  var h = "<h2>Round " + (S.session.idx + 1) + " of " + ROUNDS_PER_GAME + " - " + esc(LEVELS[S.level - 1].name) + "</h2>";
+  h += '<div class="card spark"><strong>The Spark:</strong> ' + esc(sp.spark) + '</div>';
+  h += mapHTML(lit, sp.place);
+  h += "<h3>Step " + (r.step + 1) + " - And then what?</h3>";
+  h += '<p><strong>Talk it out before you tap.</strong></p>';
+  r.options.forEach(function(o, i){
+    h += '<div class="card opt' + (r.sel === i ? " sel" : "") + '" onclick="pickOption(' + i + ')"><strong>' + esc(o.place) + ':</strong> ' + esc(o.text) + '</div>';
+  });
+  h += '<p><button class="primary" onclick="confirmStep()"' + (r.sel < 0 ? " disabled" : "") + '>See what happens</button></p>';
+  h += '<p class="small muted">Step ' + (r.step + 1) + ' of ' + sp.chain.length + ' in this chain.</p>';
+  return h;
+}
+function renderReveal(){
+  var r = S.round;
+  var sp = r.spark;
+  var h = "<h2>The Reveal</h2>";
+  h += '<p class="small muted">The Spark: ' + esc(sp.spark) + '</p>';
+  h += "<h3>What really happened</h3><ul class=\"chain\">";
+  sp.chain.forEach(function(link, i){
+    h += "<li><strong>" + (i + 1) + ". " + esc(link.place) + ":</strong> " + esc(link.text) + "<br><span class=\"small\">" + esc(link.why) + "</span></li>";
+  });
+  h += "</ul>";
+  h += "<h3>Your chain</h3><ul class=\"chain\">";
+  r.picks.forEach(function(pk, i){
+    var ok = pk.correct && !onBranchBefore(i);
+    h += "<li>" + (ok ? '<span class="tick">✓ You got this one!</span> ' : '<span class="cross">The town surprised you here - here is why:</span> ') + "<strong>" + esc(pk.place) + ":</strong> " + esc(pk.text);
+    if(!ok) h += "<br><span class=\"small\">" + esc(sp.chain[i].why) + "</span>";
+    h += "</li>";
+  });
+  h += "</ul>";
+  h += '<p class="score">' + r.points + " of " + r.max + " ripples</p>";
+  h += '<p><button class="primary" onclick="nextRound()">' + (S.session.idx + 1 < ROUNDS_PER_GAME ? "Next round" : "See how the game went") + '</button></p>';
+  return h;
+}
+function renderLoop(){
+  var r = S.round;
+  var sp = r.spark;
+  var h = "<h2>Loop Spotter</h2>";
+  h += '<p class="small muted">The Spark: ' + esc(sp.spark) + '</p>';
+  h += "<p>Watch this chain play out:</p><ul class=\"chain\">";
+  sp.chain.forEach(function(link, i){
+    h += "<li><strong>" + (i + 1) + ". " + esc(link.place) + ":</strong> " + esc(link.text) + "</li>";
+  });
+  h += "</ul>";
+  if(!r.answered){
+    h += "<h3>What kind of loop is this?</h3>";
+    h += '<p><button class="primary" onclick="pickLoop(0)">It grows bigger and bigger</button></p>';
+    h += '<p><button class="primary" onclick="pickLoop(1)">It settles back down</button></p>';
+  } else {
+    h += '<div class="' + (r.correct ? "why" : "gentle") + '"><strong>' + (r.correct ? "You spotted it!" : "The town surprised you here - here is why:") + '</strong> ' + esc(sp.loop.why) + "</div>";
+    h += '<p class="score">' + r.points + " of 1 ripple</p>";
+    h += '<p><button class="primary" onclick="nextRound()">' + (S.session.idx + 1 < ROUNDS_PER_GAME ? "Next round" : "See how the game went") + '</button></p>';
+  }
+  return h;
+}
+function renderFixit(){
+  var r = S.round;
+  var sp = r.spark;
+  var h = "<h2>Fix It</h2>";
+  h += '<p class="small muted">The Spark: ' + esc(sp.spark) + '</p>';
+  h += "<p>This chain ends badly:</p><ul class=\"chain\">";
+  sp.chain.forEach(function(link, i){
+    h += "<li><strong>" + (i + 1) + ". " + esc(link.place) + ":</strong> " + esc(link.text) + "</li>";
+  });
+  h += "<li><strong>Then:</strong> " + esc(sp.fix.bad) + "</li></ul>";
+  if(r.picked < 0){
+    h += "<h3>Pick a lever - talk it out first, one of these changes the ending.</h3>";
+    sp.fix.levers.forEach(function(lv, i){
+      h += '<div class="card opt" onclick="pickLever(' + i + ')">' + esc(lv.text) + '</div>';
+    });
+  } else {
+    var lv = sp.fix.levers[r.picked];
+    var best = sp.fix.levers.filter(function(x){ return x.tier === "best"; })[0];
+    h += '<div class="' + (lv.tier === "best" ? "why" : "gentle") + '"><strong>' + esc(lv.text) + '</strong><br>' + esc(lv.why) + "</div>";
+    if(lv.tier !== "best"){
+      h += '<div class="why"><strong>The lever that works best:</strong> ' + esc(best.text) + ' - ' + esc(best.why) + "</div>";
+    }
+    h += '<p class="score">' + r.points + " of 1 ripple</p>";
+    h += '<p><button class="primary" onclick="nextRound()">' + (S.session.idx + 1 < ROUNDS_PER_GAME ? "Next round" : "See how the game went") + '</button></p>';
+  }
+  return h;
+}
+function renderBook(){
+  var h = "<h2>📖 Ripple Book</h2>";
+  h += "<p>" + store.book.length + " chains discovered.</p>";
+  if(!store.book.length){
+    h += "<p>Play a game and every true chain you meet is added here, grouped by where it starts.</p>";
+  } else {
+    PLACES.forEach(function(p){
+      var mine = SPARKS.filter(function(sp){ return sp.place === p.name && store.book.indexOf(sp.id) >= 0; });
+      if(!mine.length) return;
+      h += "<h3>" + p.em + " " + esc(p.name) + "</h3><ul class=\"chain\">";
+      mine.forEach(function(sp){
+        h += "<li><strong>" + esc(sp.spark) + "</strong><br><span class=\"small\">" + sp.chain.map(function(l){ return esc(l.place) + ": " + esc(l.text); }).join(" - ") + "</span></li>";
+      });
+      h += "</ul>";
+    });
+  }
+  h += '<p><button class="primary" onclick="goHome()">Back</button></p>';
+  return h;
+}
+function renderEnd(){
+  var sess = S.session;
+  var pct = sess.max > 0 ? Math.round(100 * sess.points / sess.max) : 0;
+  var h = "<h2>How the game went</h2>";
+  h += "<p>Chains played: " + ROUNDS_PER_GAME + "</p>";
+  h += '<p class="score">' + sess.points + " of " + sess.max + " ripples - " + pct + "%</p>";
+  h += "<p>Best game so far: " + store.best + "% of ripples right.</p>";
+  if(S.unlockedNow){
+    h += '<div class="why"><strong>New level unlocked: ' + LEVELS[sess.level].name + '!</strong><br>Finish two games at ' + LEVELS[sess.level - 1].name + ' getting 7 of every 10 ripples right to open the one after. Levels never drop.</div>';
+  } else if(sess.level < 4){
+    h += '<p class="small muted">Towards ' + LEVELS[sess.level].name + ": get 7 of every 10 ripples right across your last two games at " + LEVELS[sess.level - 1].name + " to unlock it. Levels never drop - keep playing.</p>";
+  }
+  h += '<p><button class="primary" onclick="playAgain()">Play again</button>';
+  h += '<button onclick="goBook()">Look at my Ripple Book</button>';
+  h += '<button onclick="goHome()">Home</button></p>';
+  return h;
+}
+function render(){
+  var h = "";
+  if(S.screen === "home") h = renderHome();
+  else if(S.screen === "howto") h = renderHowto();
+  else if(S.screen === "play") h = renderPlay();
+  else if(S.screen === "reveal") h = renderReveal();
+  else if(S.screen === "loop") h = renderLoop();
+  else if(S.screen === "fixit") h = renderFixit();
+  else if(S.screen === "book") h = renderBook();
+  else if(S.screen === "end") h = renderEnd();
+  appEl.innerHTML = h;
+}
+render();
+
+/* ---- node harness hook ---- */
+if(typeof module !== "undefined" && module.exports){
+  module.exports = {PLACES: PLACES, LEVELS: LEVELS, SPARKS: SPARKS, NEXT: NEXT, GENERIC: GENERIC,
+    ROUNDS_PER_GAME: ROUNDS_PER_GAME, STORE_KEY: STORE_KEY,
+    shuffle: shuffle, esc: esc, levelPool: levelPool, loopPool: loopPool, fixPool: fixPool,
+    newSession: newSession, optionsForStep: optionsForStep,
+    startSession: startSession, pickOption: pickOption, confirmStep: confirmStep,
+    pickLoop: pickLoop, pickLever: pickLever, nextRound: nextRound, playAgain: playAgain,
+    pickLevel: pickLevel, goHome: goHome, goHowto: goHowto, goBook: goBook, startOver: startOver,
+    isUnlocked: isUnlocked, getS: function(){ return S; },
+    getStore: function(){ return store; }, setStore: function(v){ store = v; }};
+}
+</script>
+</body>
+</html>

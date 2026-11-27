@@ -64,6 +64,18 @@ trickier changes as you show you can spot them.
 
 **▶️ [Play it](https://ferborva.github.io/mind-vault-demos/switcheroo/)**
 
+## Ripple Town
+
+Practise tracing cause and effect in a pretend town. Something changes - a new
+skate park, free bread at the bakery, a week of rain - and you predict what
+happens next, ripple by ripple, then watch the true chain play out and see
+where the town surprised you. Five rounds a game, about ten minutes. Four
+levels, from two-link chains to loops that grow or settle and levers that can
+change a bad ending. Built for two heads, one screen - talk it out before
+you tap.
+
+**▶️ [Play it](https://ferborva.github.io/mind-vault-demos/ripple-town/)**
+
 
 ---
 
