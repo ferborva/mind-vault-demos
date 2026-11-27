@@ -221,12 +221,18 @@ export function popIn(scene, target, opts) {
   const reduced = prefersReducedMotion();
   const from = reduced ? 0.9 : (opts.from !== undefined ? opts.from : 0.6);
   const duration = reduced ? 150 : (opts.duration || 300);
-  target.setScale(from);
+  // Preserve a pre-set display scale: the tween must end at the
+  // target's CURRENT scale, not at absolute 1. Ending at 1 blew the
+  // 90-unit Reveal mascot up to its native 400 px, so it covered the
+  // "WHAT CHANGED" title, the desc lines and the Result score box.
+  const endX = (typeof target.scaleX === 'number') ? target.scaleX : 1;
+  const endY = (typeof target.scaleY === 'number') ? target.scaleY : 1;
+  target.setScale(from * endX, from * endY);
   if (opts.angle !== undefined) target.setAngle(opts.angle);
   const tweenConfig = {
     targets: target,
-    scaleX: 1,
-    scaleY: 1,
+    scaleX: endX,
+    scaleY: endY,
     duration: duration,
     ease: reduced ? 'Cubic.easeOut' : (opts.ease || 'Back.easeOut'),
     delay: opts.delay || 0,
@@ -582,6 +588,12 @@ export function curtainSneak(scene, mascot, opts) {
     ownMascot = true;
   }
   mascot.setPosition(fromX, y);
+  // The mascot arrives pre-scaled to its display size (e.g. 140 units);
+  // the mid-way peek must swell RELATIVE to that scale. An absolute
+  // 1.15 blew the mascot up to its native 400 px mid-crossing, covering
+  // the curtain text and clipping off the right edge.
+  const baseScaleX = (typeof mascot.scaleX === 'number') ? mascot.scaleX : 1;
+  const baseScaleY = (typeof mascot.scaleY === 'number') ? mascot.scaleY : 1;
 
   let bob = null;
   if (!reduced) {
@@ -607,6 +619,8 @@ export function curtainSneak(scene, mascot, opts) {
 
   function finish() {
     if (bob) { try { bob.stop(); } catch (e) {} if (bob) unregister(reg(scene).tweens, bob); }
+    // Leave the mascot at its display scale, never at the peek swell.
+    try { mascot.setScale(baseScaleX, baseScaleY); } catch (e) {}
     if (ownMascot) {
       unregister(reg(scene).objects, mascot);
       try { mascot.destroy(); } catch (e) {}
@@ -622,11 +636,12 @@ export function curtainSneak(scene, mascot, opts) {
     ease: 'Sine.easeInOut',
     onComplete: function () {
       dustAt(midX, y);
-      // Mid-way peek: a slow swell, then carry on.
+      // Mid-way peek: a slow swell, then carry on. Relative to the
+      // mascot's display scale (see above), never absolute.
       addTween(scene, {
         targets: mascot,
-        scaleX: 1.15,
-        scaleY: 1.15,
+        scaleX: baseScaleX * 1.15,
+        scaleY: baseScaleY * 1.15,
         duration: Math.round(peekMs / 2),
         ease: 'Sine.easeInOut',
         yoyo: true,

@@ -286,6 +286,16 @@ function drawGrid(scene, slots, y0, cellSize, gap, onTap, highlightCells, highli
     bg.setStrokeStyle(slot || isHl ? 4 : 3, INK);
     var parts = [bg];
     if (slot) parts = parts.concat(cellContent(scene, slot, cellSize));
+    else {
+      /* Empty cell - Level 1 deals 6 things into 12 cells, so half the
+         board reads as blank white squares. A faint hollow-square motif
+         makes the board a designed surface instead. Decoration only:
+         no emoji, no sprite, nothing a player could mistake for a
+         thing to remember - and it never changes which cells are empty. */
+      var motif = Math.round(cellSize * 0.11);
+      parts.push(scene.add.rectangle(0, 0, motif * 2, motif * 2)
+        .setStrokeStyle(2, GREY, 0.45));
+    }
     if (isHl && opts.hitStar) {
       parts.push(scene.add.text(cellSize / 2 - 12, -cellSize / 2 + 14, "⭐", {
         fontSize: "22px"
@@ -397,10 +407,12 @@ class HomeScene extends Phaser.Scene {
     jFloaty(eyes);
     muteButton(this, 668, 60);
     bodyText(this, "Practise remembering what you saw.", 128, 28);
-    /* Mode pick: three buttons in a row. */
-    bodyText(this, "Who is playing?", 182, 26);
+    /* Mode pick: three buttons in a row. The label sits fully above
+       the buttons - it used to sit 17 px under their top edge, so the
+       buttons hid it. */
+    bodyText(this, "Who is playing?", 172, 26);
     MODES.forEach(function (m, i) {
-      punkButton(self, 132 + i * 228, 244, 204, m, function () {
+      punkButton(self, 132 + i * 228, 256, 204, m, function () {
         pickMode(i); self.scene.restart();
       }, { fill: S.mode === i ? YELLOW : WHITE, sound: "pick" });
     });
@@ -414,33 +426,42 @@ class HomeScene extends Phaser.Scene {
           { fill: S.level === lvl ? LIME : WHITE, disabled: locked, fontSize: 34, sound: "pick" });
       })(l);
     }
-    bodyText(this, "Level " + S.level + " - " + LEVELS[S.level].name + ": " + LEVELS[S.level].blurb, 470, 24);
+    /* The level line can wrap to two lines (long blurbs), so the Scene
+       block is placed from its real rendered height, not a fixed y -
+       a fixed y is exactly how the Scene label ended up under the
+       theme buttons. Everything below shifts with it; at one line the
+       layout is identical to before. */
+    var levelText = bodyText(this, "Level " + S.level + " - " + LEVELS[S.level].name + ": " + LEVELS[S.level].blurb, 470, 24);
+    var sceneY = 470 + textAdvance(levelText, 24, 14);
+    bodyText(this, "Scene", sceneY, 26);
+    /* Theme buttons sit 8 px below the Scene label: label ~31 tall,
+       buttons 96 tall, so their centre is sceneY + 31 + 8 + 48. */
+    var themeY = sceneY + 87;
     /* Theme pick: emoji-only buttons in one row (88 units wide = 44 CSS px
        on a 360 px wide phone at 0.5x scale), name below. */
-    bodyText(this, "Scene", 528, 26);
     THEMES.forEach(function (t, i) {
-      punkButton(self, 72 + i * 96, 600, 88, t.emoji, function () {
+      punkButton(self, 72 + i * 96, themeY, 88, t.emoji, function () {
         pickTheme(i); self.scene.restart();
       }, { fill: S.themePick === i ? YELLOW : WHITE, fontSize: 40, sound: "pick" });
     });
-    punkButton(self, 72 + 6 * 96, 600, 88, "🎲", function () {
+    punkButton(self, 72 + 6 * 96, themeY, 88, "🎲", function () {
       pickTheme(6); self.scene.restart();
     }, { fill: S.themePick === 6 ? YELLOW : WHITE, fontSize: 40, sound: "pick" });
     bodyText(this, S.themePick === 6 ? "Surprise me - a random scene each game"
-      : THEMES[S.themePick].name, 668, 24);
-    punkButton(self, 360, 762, 560, "START GAME", function () {
+      : THEMES[S.themePick].name, themeY + 68, 24);
+    punkButton(self, 360, themeY + 162, 560, "START GAME", function () {
       newGame(); goTo(self, S.screen);
     }, { fill: PINK, textColor: "#ffffff", fontSize: 34 });
-    punkButton(self, 360, 874, 560, "How to play", function () { self.scene.start("HowTo"); },
+    punkButton(self, 360, themeY + 274, 560, "How to play", function () { self.scene.start("HowTo"); },
       { fontSize: 26 });
-    punkButton(self, 360, 986, 560, "Caught Switches", function () { self.scene.start("Gallery"); },
+    punkButton(self, 360, themeY + 386, 560, "Caught Switches", function () { self.scene.start("Gallery"); },
       { fontSize: 26 });
     smallText(self, "Levels unlocked: " + S.progress.unlocked + " of 5  •  Switch types caught: " +
-      Object.keys(S.progress.caught || {}).length + " of " + SWITCH_TYPES.length, 1052);
-    punkButton(self, 200, 1140, 320, "Start over", function () {
+      Object.keys(S.progress.caught || {}).length + " of " + SWITCH_TYPES.length, themeY + 452);
+    punkButton(self, 200, themeY + 540, 320, "Start over", function () {
       startOver(); self.scene.restart();
     }, { height: 88, fontSize: 22 });
-    smallText(self, "Start over clears unlocked levels - your Caught Switches stay put.", 1188);
+    smallText(self, "Start over clears unlocked levels - your Caught Switches stay put.", themeY + 588);
   }
 }
 
@@ -484,8 +505,11 @@ function galleryCard(scene, x, y, w, h, emoji, label, got, pill) {
   scene.add.rectangle(x + 5, y + 5, w, h, INK);
   var bg = scene.add.rectangle(x, y, w, h, got ? WHITE : PAPER);
   bg.setStrokeStyle(4, INK);
-  var em = scene.add.text(x, y - h / 2 + 24, emoji, { fontSize: "36px" }).setOrigin(0.5, 0);
-  var lb = scene.add.text(x, y + 6, label, {
+  /* Three stacked zones, sized from the card height with real gaps:
+     the old layout put the pill's top inside the label's lines on the
+     short theme cards, so "Not yet" struck through the theme name. */
+  var em = scene.add.text(x, y - h / 2 + 14, emoji, { fontSize: "32px" }).setOrigin(0.5, 0);
+  var lb = scene.add.text(x, y + h / 2 - 68, label, {
     fontFamily: BODY_FONT, fontSize: "22px", fontStyle: "800", color: "#141414",
     align: "center", wordWrap: { width: w - 20 }
   }).setOrigin(0.5, 0);
@@ -520,15 +544,19 @@ class GalleryScene extends Phaser.Scene {
         got, got ? "Caught!" : "Not caught yet");
     });
     bodyText(this, "Switch types caught: " + nCaught + " of " + SWITCH_TYPES.length + ".", 730, 24);
-    bodyText(this, "Themes cleared 6 of 6", 780, 26);
     var nCleared = 0;
     THEMES.forEach(function (t, i) {
       var got = !!cleared[t.id];
       if (got) nCleared++;
       var cx = 140 + (i % 3) * 220, cy = 870 + Math.floor(i / 3) * 120;
-      galleryCard(self, cx, cy, 200, 110, t.emoji, t.name.replace("The ", ""),
+      /* Taller cards (124, was 110): the pill and the label need the
+         room - see galleryCard. Row 2 ends at 1052, footer at 1065. */
+      galleryCard(self, cx, cy, 200, 124, t.emoji, t.name.replace("The ", ""),
         got, got ? "Cleared!" : "Not yet");
     });
+    /* The header count is the real count, computed above - this line
+       once hardcoded "Themes cleared 6 of 6" on a fresh save. */
+    bodyText(this, "Themes cleared " + nCleared + " of " + THEMES.length + ".", 780, 26);
     smallText(this, "Themes cleared: " + nCleared + " of " + THEMES.length +
       ". A theme counts as cleared when you spot all 6 switches in one game there.", 1065);
     var self2 = this;
@@ -614,18 +642,21 @@ class CurtainScene extends Phaser.Scene {
     }).setOrigin(0.5, 0);
     jFadeIn(this, whisper, { duration: 600 });
     playSfx("curtain");
-    /* The mascot crosses the curtain; the sneak is interruptible and
-       its tween is killed cleanly on exit (shutdown cleanup + button). */
+    /* The mascot crosses BELOW the card, never through the text: the
+       card ends at 570 and the button starts at 752, so the path runs
+       at y 665 with a 140-unit mascot (595-735). The crossing stays
+       fully in bounds (x 75-645) - it used to run at y 560 straight
+       through the whisper text and off the right edge. */
     var mascot = null;
     if (this.textures.exists("mascot-sneaking")) {
-      mascot = this.add.image(-40, 560, "mascot-sneaking");
+      mascot = this.add.image(-40, 665, "mascot-sneaking");
       var src = this.textures.get("mascot-sneaking").getSourceImage();
-      mascot.setScale(200 / Math.max(src.width, src.height));
+      mascot.setScale(140 / Math.max(src.width, src.height));
     }
-    jCurtainSneak(this, mascot, { y: 560 });
-    /* No Juice (file:// fallback): park the mascot centre-stage instead
-       of leaving it off-screen at x -40. */
-    if (!J() && mascot) mascot.setPosition(360, 560);
+    jCurtainSneak(this, mascot, { y: 665, fromX: 75, toX: 645 });
+    /* No Juice (file:// fallback): park the mascot centre-stage below
+       the card instead of leaving it off-screen at x -40. */
+    if (!J() && mascot) mascot.setPosition(360, 665);
     var self = this;
     var spotBtn = punkButton(self, 360, 800, 560, levelDef().distractor ? "READY" : "SPOT IT!", function () {
       jCleanup(self);
@@ -844,10 +875,16 @@ class RevealScene extends Phaser.Scene {
           ease: "Back.easeOut", yoyo: true, hold: 100,
           onComplete: function () { cell.setScale(1.06); } });
         jCelebrateReveal(this, pos.x, pos.y, { seed: S.seed });
+        /* Peeking mascot in the empty top-left corner, clear of the
+           title (centred; its left edge measures 103-132 across fonts
+           at 56 px, so the mascot's right edge stops at 94) and of the
+           desc lines below (y 120+). It used to sit top-right at
+           (655, 100), where the popIn bug blew it to native size over
+           the title's final "D". */
         if (this.textures.exists("mascot-peeking")) {
-          var masc = this.add.image(655, 100, "mascot-peeking");
+          var masc = this.add.image(52, 60, "mascot-peeking");
           var msrc = this.textures.get("mascot-peeking").getSourceImage();
-          masc.setScale(90 / Math.max(msrc.width, msrc.height));
+          masc.setScale(84 / Math.max(msrc.width, msrc.height));
           jPopIn(this, masc, { from: 0.6, duration: 350 });
         }
         playSfx("correct");
