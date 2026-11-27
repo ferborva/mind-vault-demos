@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Switcheroo! - AAA pilot</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #fffbe8; height: 100%; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  #game { margin: 0 auto; }
+  #game canvas { display: block; margin: 0 auto; touch-action: manipulation; }
+  noscript p { text-align: center; font-size: 18px; padding: 40px 20px; }
+</style>
+</head>
+<body>
+<div id="game"></div>
+<noscript><p>Switcheroo! pilot needs JavaScript to run.</p></noscript>
+<!-- Self-hosted engine: no CDN, no external requests at runtime. -->
+<script src="lib/phaser.min.js"></script>
+<script src="src/data.js"></script>
+<script src="src/core.js"></script>
+<script src="src/audio.js"></script>
+<!-- Module entry: imports juice.js (ES module), exposes window.Juice,
+     then loads scenes.js + main.js as classic scripts. See src/bootstrap.js. -->
+<script type="module" src="src/bootstrap.js"></script>
+<script>
+  /* file:// fallback: ES modules are blocked from file:// in some
+     browsers, so the module bootstrap above never runs there. If it
+     has not started shortly, load the classic scripts directly; the
+     scenes guard every Juice call, so the game plays without motion
+     juice instead of showing a blank page. Over http(s) the module
+     path runs first and this does nothing. */
+  setTimeout(function () {
+    if (!window.__pilot && !window.Juice) {
+      var s1 = document.createElement("script");
+      s1.src = "src/scenes.js";
+      s1.onload = function () {
+        var s2 = document.createElement("script");
+        s2.src = "src/main.js";
+        document.head.appendChild(s2);
+      };
+      document.head.appendChild(s1);
+    }
+  }, 1200);
+</script>
+</body>
+</html>
