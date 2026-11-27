@@ -6,41 +6,70 @@
 <title>Ripple Town - predict the ripple</title>
 <style>
 * { box-sizing: border-box; }
-body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; background: #eef7f0; color: #22301f; line-height: 1.45; }
+body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; background: #fff3bf; color: #22301f; line-height: 1.45; }
 #app { max-width: 720px; margin: 0 auto; padding: 16px; }
-h1 { font-size: 34px; margin: 8px 0 4px; }
+h1 { font-size: 34px; margin: 8px 0 4px; display: inline-block; background: #ffd500; border: 3px solid #111; border-radius: 14px; padding: 6px 14px; box-shadow: 5px 5px 0 #111; transform: rotate(-2deg); animation: bob 2.4s ease-in-out infinite; }
 h2 { font-size: 26px; margin: 10px 0 6px; }
 h3 { font-size: 19px; margin: 14px 0 6px; }
 p { margin: 8px 0; }
 .small { font-size: 14px; }
 .muted { color: #5a6b57; }
-.tagline { font-size: 18px; font-weight: 600; }
-button { font: inherit; min-height: 48px; min-width: 48px; padding: 10px 18px; border-radius: 12px; border: 3px solid #2e6b34; background: #fff; color: #22301f; cursor: pointer; margin: 4px 6px 4px 0; }
+.tagline { font-size: 18px; font-weight: 600; display: inline-block; background: #ffe3f1; padding: 2px 10px; border: 2px solid #111; border-radius: 999px; transform: rotate(-1deg); }
+button { font: inherit; min-height: 48px; min-width: 48px; padding: 10px 18px; border-radius: 12px; border: 3px solid #111; background: #fff; color: #22301f; cursor: pointer; margin: 4px 6px 4px 0; box-shadow: 4px 4px 0 #111; transition: transform .12s ease, box-shadow .12s ease; }
+button:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #111; }
 button.primary { background: #2e6b34; color: #fff; }
 button:disabled { opacity: 0.45; cursor: default; }
-button.sel { background: #ffe08a; border-color: #b8860b; }
-.card { background: #fff; border: 3px solid #2e6b34; border-radius: 14px; padding: 14px; margin: 10px 0; min-height: 48px; }
+button.sel { background: #ffd500; border-color: #111; transform: translateY(-2px); box-shadow: 6px 6px 0 #111; }
+.card { background: #fff; border: 3px solid #111; border-radius: 14px; padding: 14px; margin: 10px 0; min-height: 48px; box-shadow: 4px 4px 0 #111; animation: popIn .3s ease both; }
 .card.opt { cursor: pointer; }
-.card.opt.sel { background: #ffe08a; border-color: #b8860b; }
-.spark { background: #fff8d6; border-color: #b8860b; font-size: 18px; }
-.why { background: #e3f2e5; border: 3px solid #2e6b34; border-radius: 12px; padding: 12px; margin: 10px 0; }
-.gentle { background: #eef4ff; border: 3px solid #4a6fa5; border-radius: 12px; padding: 12px; margin: 10px 0; }
-.map { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; }
-.place { background: #fff; border: 3px solid #7ba05b; border-radius: 14px; padding: 10px 6px; text-align: center; min-height: 64px; }
-.place .em { font-size: 30px; display: block; }
+.card.opt.sel { background: #ffd500; border-color: #111; transform: translateY(-3px) scale(1.02); box-shadow: 6px 6px 0 #ff2e88; }
+.spark { background: #fff8d6; border-color: #111; font-size: 18px; box-shadow: 4px 4px 0 #ff2e88; }
+.why { background: #d8f7a0; border: 3px solid #111; border-radius: 12px; padding: 12px; margin: 10px 0; box-shadow: 4px 4px 0 #111; animation: popIn .3s ease both; }
+.gentle { background: #d6ecff; border: 3px solid #111; border-radius: 12px; padding: 12px; margin: 10px 0; box-shadow: 4px 4px 0 #111; animation: popIn .3s ease both; }
+.map { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 12px 0; }
+.place { position: relative; background: #fff; border: 3px solid #111; border-radius: 14px; padding: 12px 6px 10px; text-align: center; min-height: 76px; box-shadow: 3px 3px 0 #111; }
+.place:nth-child(1) { background: #ffe3f1; }
+.place:nth-child(2) { background: #d8f7a0; }
+.place:nth-child(3) { background: #fff3bf; }
+.place:nth-child(4) { background: #d6ecff; }
+.place:nth-child(5) { background: #ffd9c2; }
+.place:nth-child(6) { background: #e6d9ff; }
+.place .em { font-size: 44px; display: block; line-height: 1.1; }
 .place .nm { font-size: 14px; font-weight: 700; }
-.place.lit { background: #ffe08a; border-color: #b8860b; }
-.place.spark { background: #fff8d6; border-color: #b8860b; }
+.place.lit { background: #ffd500; }
+.place.spark { box-shadow: 3px 3px 0 #111, 0 0 0 3px #ff2e88; }
+.place .spark-mark { position: absolute; top: -10px; right: -6px; background: #ff2e88; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 2px 7px; border: 2px solid #111; border-radius: 999px; transform: rotate(8deg); }
+.place .ripple-dot { position: absolute; top: 6px; left: 8px; width: 16px; height: 16px; border-radius: 50%; background: #ff2e88; border: 2px solid #111; opacity: 0; }
+.place.ripple-step { animation: rippleGlow .9s ease both; }
+.place.ripple-step .ripple-dot { animation: dotPop .9s ease both; }
+.place.just-picked { animation: pickPulse 1s ease 2; }
 .score { font-size: 20px; font-weight: 700; }
-.tick { color: #2e6b34; font-weight: 700; }
+.pop-in { animation: popIn .4s ease both; }
+.tick { color: #2e6b34; font-weight: 700; display: inline-block; animation: tickPop .35s ease both; }
 .cross { color: #4a6fa5; font-weight: 700; }
 ul.chain { list-style: none; padding: 0; }
-ul.chain li { background: #fff; border: 2px solid #7ba05b; border-radius: 10px; padding: 10px; margin: 6px 0; }
+ul.chain li { background: #fff; border: 3px solid #111; border-radius: 12px; padding: 10px; margin: 6px 0; box-shadow: 3px 3px 0 #111; }
+ul.chain li.chain-step { animation: popIn .45s ease both; }
 .levels { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
 .levels button.locked { opacity: 0.45; }
 .howto-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
 @media (min-width: 560px) { .howto-grid { grid-template-columns: 1fr 1fr 1fr; } }
+@keyframes popIn { from { opacity: 0; transform: translateY(8px) scale(.96); } to { opacity: 1; } }
+@keyframes bob { 0%, 100% { transform: rotate(-2deg) translateY(0); } 50% { transform: rotate(-2deg) translateY(-3px); } }
+@keyframes rippleGlow { 0% { transform: scale(1); box-shadow: 3px 3px 0 #111; } 35% { transform: scale(1.08); background: #ffd500; box-shadow: 0 0 0 4px #ff2e88, 4px 4px 0 #111; } 100% { transform: scale(1); background: #ffd500; box-shadow: 3px 3px 0 #111; } }
+@keyframes dotPop { 0% { opacity: 0; transform: scale(0); } 40% { opacity: 1; transform: scale(1.4); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes pickPulse { 0%, 100% { box-shadow: 3px 3px 0 #111; transform: scale(1); } 50% { box-shadow: 0 0 0 5px #ff2e88, 4px 4px 0 #111; transform: scale(1.06); } }
+@keyframes tickPop { 0% { transform: scale(0); } 70% { transform: scale(1.4); } 100% { transform: scale(1); } }
+@media (hover: hover) {
+  button:not(.sel):hover { transform: translateY(-2px); box-shadow: 6px 6px 0 #111; }
+  button.primary:hover { transform: translateY(-2px); box-shadow: 6px 6px 0 #ff2e88; }
+  .card.opt:not(.sel):hover { transform: translateY(-2px); box-shadow: 6px 6px 0 #111; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
 </style>
+
 </head>
 <body>
 <div id="app"></div>
@@ -1027,13 +1056,22 @@ function startOver(){
 }
 
 /* ---- rendering ---- */
-function mapHTML(litPlaces, sparkPlace){
+function mapHTML(litPlaces, sparkPlace, rippleOrder, pulsePlace){
   var h = '<div class="map">';
   PLACES.forEach(function(p){
     var cls = "place";
     if(p.name === sparkPlace) cls += " spark";
     if(litPlaces && litPlaces.indexOf(p.name) >= 0) cls += " lit";
-    h += '<div class="' + cls + '"><span class="em">' + p.em + '</span><span class="nm">' + esc(p.name) + '</span></div>';
+    if(pulsePlace && p.name === pulsePlace) cls += " just-picked";
+    var delay = "";
+    var dot = "";
+    if(rippleOrder && rippleOrder.indexOf(p.name) >= 0){
+      var step = rippleOrder.indexOf(p.name);
+      cls += " ripple-step";
+      delay = ' style="animation-delay: ' + (step * 0.7).toFixed(1) + 's"';
+      dot = '<span class="ripple-dot"' + delay + '></span>';
+    }
+    h += '<div class="' + cls + '"' + delay + '>' + dot + (p.name === sparkPlace ? '<span class="spark-mark">✨ SPARK</span>' : '') + '<span class="em">' + p.em + '</span><span class="nm">' + esc(p.name) + '</span></div>';
   });
   return h + "</div>";
 }
@@ -1080,7 +1118,8 @@ function renderPlay(){
   r.picks.forEach(function(pk){ if(lit.indexOf(pk.place) < 0) lit.push(pk.place); });
   var h = "<h2>Round " + (S.session.idx + 1) + " of " + ROUNDS_PER_GAME + " - " + esc(LEVELS[S.level - 1].name) + "</h2>";
   h += '<div class="card spark"><strong>The Spark:</strong> ' + esc(sp.spark) + '</div>';
-  h += mapHTML(lit, sp.place);
+  var lastPick = r.picks.length ? r.picks[r.picks.length - 1].place : null;
+  h += mapHTML(lit, sp.place, null, lastPick);
   h += "<h3>Step " + (r.step + 1) + " - And then what?</h3>";
   h += '<p><strong>Talk it out before you tap.</strong></p>';
   r.options.forEach(function(o, i){
@@ -1095,20 +1134,22 @@ function renderReveal(){
   var sp = r.spark;
   var h = "<h2>The Reveal</h2>";
   h += '<p class="small muted">The Spark: ' + esc(sp.spark) + '</p>';
+  var chainPlaces = sp.chain.map(function(l){ return l.place; });
+  h += mapHTML(chainPlaces, sp.place, chainPlaces);
   h += "<h3>What really happened</h3><ul class=\"chain\">";
   sp.chain.forEach(function(link, i){
-    h += "<li><strong>" + (i + 1) + ". " + esc(link.place) + ":</strong> " + esc(link.text) + "<br><span class=\"small\">" + esc(link.why) + "</span></li>";
+    h += '<li class="chain-step" style="animation-delay: ' + (0.4 + i * 0.7).toFixed(1) + 's"><strong>' + (i + 1) + ". " + esc(link.place) + ":</strong> " + esc(link.text) + "<br><span class=\"small\">" + esc(link.why) + "</span></li>";
   });
   h += "</ul>";
   h += "<h3>Your chain</h3><ul class=\"chain\">";
   r.picks.forEach(function(pk, i){
     var ok = pk.correct && !onBranchBefore(i);
-    h += "<li>" + (ok ? '<span class="tick">✓ You got this one!</span> ' : '<span class="cross">The town surprised you here - here is why:</span> ') + "<strong>" + esc(pk.place) + ":</strong> " + esc(pk.text);
+    h += '<li class="chain-step" style="animation-delay: ' + (0.4 + i * 0.5).toFixed(1) + 's">' + (ok ? '<span class="tick">✓ You got this one!</span> ' : '<span class="cross">The town surprised you here - here is why:</span> ') + "<strong>" + esc(pk.place) + ":</strong> " + esc(pk.text);
     if(!ok) h += "<br><span class=\"small\">" + esc(sp.chain[i].why) + "</span>";
     h += "</li>";
   });
   h += "</ul>";
-  h += '<p class="score">' + r.points + " of " + r.max + " ripples</p>";
+  h += '<p class="score pop-in">' + r.points + " of " + r.max + " ripples</p>";
   h += '<p><button class="primary" onclick="nextRound()">' + (S.session.idx + 1 < ROUNDS_PER_GAME ? "Next round" : "See how the game went") + '</button></p>';
   return h;
 }
