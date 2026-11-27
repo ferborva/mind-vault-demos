@@ -49,12 +49,9 @@
     color:var(--ink);padding:10px 16px;margin:6px 6px 6px 0;cursor:pointer;
     text-align:left;line-height:1.35;box-shadow:4px 4px 0 var(--ink);
     transition:transform .12s ease,box-shadow .12s ease,background .12s ease}
-  button:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink);
-    background:var(--yellow)}
   button:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
   button.primary{background:var(--pink);color:#fff;font-weight:900;text-align:center;
     text-transform:uppercase;letter-spacing:.03em}
-  button.primary:hover{background:var(--purple)}
   button.primary:disabled{background:#b9c9c4;color:var(--ink);border-color:var(--ink);cursor:default;
     box-shadow:4px 4px 0 var(--ink);transform:none}
   button:disabled{opacity:.55;cursor:default}
@@ -92,8 +89,6 @@
     display:flex;align-items:center;justify-content:center;cursor:pointer;
     padding:0;margin:0;text-align:center;box-shadow:4px 4px 0 var(--ink);
     transition:transform .12s ease,box-shadow .12s ease,background .12s ease}
-  button.cell:hover{background:var(--cyan);box-shadow:6px 6px 0 var(--ink);
-    animation:wiggle .35s ease-in-out infinite}
   button.cell:active{transform:translate(2px,2px) scale(.98);box-shadow:1px 1px 0 var(--ink)}
   .cell.emptycell{border-style:dashed;background:var(--paper);box-shadow:none}
   .cell .add{font-size:22px;margin-left:2px}
@@ -112,11 +107,22 @@
     border:3px solid var(--ink);background:var(--white);font-size:24px;font-weight:800;
     font-family:system-ui,sans-serif;cursor:pointer;text-align:center;
     box-shadow:3px 3px 0 var(--ink);transition:transform .12s ease,box-shadow .12s ease}
-  .tile:hover{transform:translate(-1px,-1px) scale(1.06);box-shadow:4px 4px 0 var(--ink);
-    background:var(--yellow)}
   .tile.picked{background:var(--pink);color:#fff;font-weight:900;transform:rotate(-2deg)}
   .tray{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
   .hidden{display:none}
+  /* Hover feedback only where a real hover exists. On touch devices a tap
+     leaves a stuck :hover behind, which painted the top-left grid cell
+     cyan on the spot screen before any tap (#51). */
+  @media (hover:hover){
+    button:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink);
+      background:var(--yellow)}
+    button.primary:hover{background:var(--purple)}
+    button.cell:hover{background:var(--cyan);box-shadow:6px 6px 0 var(--ink);
+      animation:wiggle .35s ease-in-out infinite}
+    .tile:hover{transform:translate(-1px,-1px) scale(1.06);box-shadow:4px 4px 0 var(--ink);
+      background:var(--yellow)}
+  }
+  button:focus-visible{outline:3px solid var(--purple);outline-offset:2px}
   @keyframes popin{0%{transform:scale(.85) rotate(-2deg);opacity:0}
     70%{transform:scale(1.04) rotate(.5deg);opacity:1}
     100%{transform:scale(1) rotate(0deg);opacity:1}}
