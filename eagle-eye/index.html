@@ -24,6 +24,8 @@ h1 .e{color:#00b3ff}
 @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.15) rotate(3deg)}100%{transform:scale(1)}}
 .btn{display:inline-block;margin-top:20px;padding:14px 26px;font-size:18px;font-weight:800;border:3px solid #111;border-radius:999px;background:#00b3ff;color:#fff;box-shadow:4px 4px 0 #111;cursor:pointer}
 .btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #111}
+.btn.alt{background:#ff2e88}
+.btn.small{font-size:16px;padding:10px 20px;margin-top:12px}
 .muted{color:#555;font-size:15px;margin-top:16px}
 .best{font-weight:800;color:#ff2e88;font-size:18px}
 </style>
@@ -42,6 +44,32 @@ h1 .e{color:#00b3ff}
 var POOL=['\u2B50','\u{1F34E}','\u{1F34C}','\u{1F347}','\u{1F436}','\u{1F431}','\u{1F98A}','\u{1F981}','\u{1F438}','\u{1F697}','\u{1F680}','\u{1F388}','\u26BD','\u{1F308}','\u{1F355}','\u{1F369}','\u{1F98B}','\u{1F3B8}'];
 var ROUNDS=10;
 var round=0, target='', taps=0, lock=false, times=[], roundStart=0, tickId=null;
+var mode='solo', roundBestsNew=[];
+function roundBests(){
+  try{var v=localStorage.getItem('eagleEyeRoundBests'); return v?JSON.parse(v):{};}catch(e){return {};}
+}
+function saveRoundBest(r,ms){
+  try{
+    var b=roundBests();
+    if(b[r]===undefined||ms<b[r]){b[r]=ms; localStorage.setItem('eagleEyeRoundBests',JSON.stringify(b)); return true;}
+  }catch(e){}
+  return false;
+}
+function showStart(){
+  clearInterval(tickId);
+  document.getElementById('round').textContent='';
+  document.getElementById('clock').textContent='';
+  document.getElementById('app').innerHTML='';
+  var b=best();
+  var html='<p style="font-size:20px;font-weight:800;margin:18px 0 8px">How do you want to play?</p>'
+    +'<button class="btn" onclick="startSolo()">Solo - 10 rounds</button><br>'
+    +'<button class="btn alt" onclick="startVersus()">Versus - 2 players</button>'
+    +'<p class="muted">Versus is pass-and-play on one device: take turns, one round each, then compare totals at the end. The clock counts up, never down - quickest total wins the duel, nothing is lost.</p>';
+  if(b!==null) html+='<p class="muted" style="margin-top:0">Solo best total: '+fmt(b)+'</p>';
+  document.getElementById('end').innerHTML=html;
+}
+function startSolo(){mode='solo'; newGame();}
+function startVersus(){mode='versus'; newGame();}
 function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function fmt(ms){return (ms/1000).toFixed(1)+'s';}
 function best(){
@@ -56,7 +84,7 @@ function saveBest(ms){
 }
 function newGame(){
   clearInterval(tickId);
-  round=0; taps=0; times=[];
+  round=0; taps=0; times=[]; roundBestsNew=[];
   document.getElementById('end').innerHTML='';
   document.getElementById('clock').textContent='';
   nextRound();
@@ -67,7 +95,8 @@ function nextRound(){
   var pool=shuffle(POOL.slice());
   target=pool[0];
   var items=shuffle(pool.slice(0,12));
-  document.getElementById('round').textContent='Round '+round+' of '+ROUNDS+' - find the '+target;
+  var who=(mode==='versus')?'Player '+((round%2===1)?1:2)+', ':'';
+  document.getElementById('round').textContent='Round '+round+' of '+ROUNDS+' - '+who+'find the '+target;
   var app=document.getElementById('app');
   app.innerHTML='<div class="field" id="field"></div>';
   var field=document.getElementById('field');
@@ -94,6 +123,7 @@ function tap(b,e){
     lock=true;
     var ms=Date.now()-roundStart;
     times.push(ms);
+    if(saveRoundBest(round,ms)) roundBestsNew.push({r:round,ms:ms});
     clearInterval(tickId);
     b.classList.add('right');
     document.getElementById('clock').textContent='Spotted in '+fmt(ms)+'!';
@@ -106,18 +136,38 @@ function win(){
   clearInterval(tickId);
   var total=times.reduce(function(a,b){return a+b;},0);
   var fastest=Math.min.apply(null,times);
-  var prevBest=best();
-  var isNew=saveBest(total);
   document.getElementById('round').textContent='';
   document.getElementById('clock').textContent='';
   document.getElementById('app').innerHTML='';
-  var html='<p style="font-size:22px;font-weight:800;margin:18px 0 4px">All 10 spotted in '+fmt(total)+'!</p>';
-  if(isNew) html+='<p class="best">New best time!</p>';
-  else if(prevBest!==null) html+='<p class="muted">Best: '+fmt(prevBest)+'</p>';
-  html+='<p class="muted" style="margin-top:0">Fastest spot: '+fmt(fastest)+' - '+taps+' taps. Play again for a fresh set.</p><button class="btn" onclick="newGame()">Play again?</button>';
+  var html='';
+  if(mode==='versus'){
+    var p1=0,p2=0,f1=Infinity,f2=Infinity;
+    times.forEach(function(ms,i){
+      if(i%2===0){p1+=ms; if(ms<f1)f1=ms;}
+      else{p2+=ms; if(ms<f2)f2=ms;}
+    });
+    html+='<p style="font-size:22px;font-weight:800;margin:18px 0 4px">Versus results - all 10 spotted!</p>';
+    html+='<p style="font-size:18px;font-weight:800;margin:6px 0">Player 1: '+fmt(p1)+' &nbsp;-&nbsp; Player 2: '+fmt(p2)+'</p>';
+    if(p1<p2) html+='<p class="best">Player 1 was quickest overall!</p>';
+    else if(p2<p1) html+='<p class="best">Player 2 was quickest overall!</p>';
+    else html+='<p class="best">A perfect tie!</p>';
+    html+='<p class="muted" style="margin-top:0">Fastest spots - Player 1: '+fmt(f1)+' - Player 2: '+fmt(f2)+' - '+taps+' taps in total.</p>';
+  } else {
+    var prevBest=best();
+    var isNew=saveBest(total);
+    html+='<p style="font-size:22px;font-weight:800;margin:18px 0 4px">All 10 spotted in '+fmt(total)+'!</p>';
+    if(isNew) html+='<p class="best">New best time!</p>';
+    else if(prevBest!==null) html+='<p class="muted">Best: '+fmt(prevBest)+'</p>';
+    html+='<p class="muted" style="margin-top:0">Fastest spot: '+fmt(fastest)+' - '+taps+' taps. Play again for a fresh set.</p>';
+  }
+  if(roundBestsNew.length){
+    var parts=roundBestsNew.map(function(x){return 'Round '+x.r+' ('+fmt(x.ms)+')';});
+    html+='<p class="muted" style="margin-top:0">New fastest spot for '+parts.join(', ')+'.</p>';
+  }
+  html+='<button class="btn" onclick="newGame()">Play again?</button> <button class="btn alt small" onclick="showStart()">Change mode</button>';
   document.getElementById('end').innerHTML=html;
 }
-newGame();
+showStart();
 </script>
 </body>
 </html>
