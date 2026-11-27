@@ -329,14 +329,14 @@ var SPARKS = [
     chain: [
       { place: "School", text: "Kids grow tomatoes and carrots at school", why: "The new garden gives kids a place to plant and grow food." },
       { place: "Bakery", text: "The Bakery buys school tomatoes for sandwiches", why: "The Bakery needs fresh tomatoes, and the school garden grows plenty." },
-      { place: "School", text: "The school uses the money to plant more veggies", why: "Selling tomatoes brings in money, and the school spends it on more seeds and plants." }
+      { place: "School", text: "The garden runs low, so the Bakery buys fewer tomatoes and the garden has time to grow back", why: "Selling lots of tomatoes empties the garden beds, so the garden rests and grows back before the next sale." }
     ],
     d: [
       [ { place: "Playground", text: "Kids plant flowers at the Playground" }, { place: "Library", text: "The Library grows herbs on the roof" } ],
       [ { place: "Bus Stop", text: "The Bakery sells tomatoes at the Bus Stop" }, { place: "Park Pond", text: "Tomatoes grow wild by the Pond" } ],
       [ { place: "Bakery", text: "The Bakery gives tomatoes away for free" }, { place: "Playground", text: "The Playground turns into a farm" } ]
     ],
-    loop: { type: "reinforcing", why: "More veggies mean more sales, and more sales mean more veggies to grow." },
+    loop: { type: "balancing", why: "Selling tomatoes empties the garden, so sales slow down and the garden grows back - the loop settles instead of growing forever." },
     fix: null
   },
   {
@@ -346,14 +346,14 @@ var SPARKS = [
     chain: [
       { place: "Park Pond", text: "Ducks and frogs come back to the Pond", why: "Clean water is a good home, so ducks and frogs return." },
       { place: "Playground", text: "More families visit the Playground near the Pond", why: "A clean Pond with ducks is a lovely spot, so families come to enjoy it." },
-      { place: "Park Pond", text: "More people care for the Pond and keep it clean", why: "People who love the Pond look after it, so it stays clean for the ducks." }
+      { place: "Park Pond", text: "The Pond gets busy and messy, so fewer families visit and the Pond has time to settle", why: "Lots of visitors leave litter and stir up the water, so families stay away for a while and the Pond calms down again." }
     ],
     d: [
       [ { place: "Library", text: "The Library opens a Pond club" }, { place: "Bakery", text: "The Bakery sells fish food" } ],
       [ { place: "School", text: "The School moves lessons to the Pond" }, { place: "Bus Stop", text: "Buses stop at the Pond now" } ],
       [ { place: "Bakery", text: "The Bakery starts a Pond picnic menu" }, { place: "School", text: "The School bans swimming in the Pond" } ]
     ],
-    loop: { type: "reinforcing", why: "A clean Pond brings people, and people keep the Pond clean." },
+    loop: { type: "balancing", why: "More visitors make the Pond messy, so fewer people come, and the Pond gets a rest - the loop settles back down." },
     fix: null
   },
   {
@@ -397,14 +397,14 @@ var SPARKS = [
     chain: [
       { place: "Bus Stop", text: "More kids catch the bus to school", why: "A bus every 15 minutes means less waiting, so more kids ride." },
       { place: "School", text: "Fewer cars crowd the School gate", why: "More kids on the bus means fewer cars dropping kids off." },
-      { place: "Bus Stop", text: "The bus stays on time because the road is clear", why: "With fewer cars, the road is clear, so the bus runs on time." }
+      { place: "Bus Stop", text: "The buses get crowded, so some kids walk instead and the buses have room again", why: "When every bus is full, walking looks easier, so fewer kids ride and the buses are comfortable again." }
     ],
     d: [
       [ { place: "Library", text: "The Library opens earlier" }, { place: "Playground", text: "Kids play at the Bus Stop" } ],
       [ { place: "Bakery", text: "The Bakery sells breakfast to drivers" }, { place: "Park Pond", text: "Families drive to the Pond" } ],
       [ { place: "School", text: "The School starts later" }, { place: "Bakery", text: "The Bakery delivers bread by bus" } ]
     ],
-    loop: { type: "reinforcing", why: "A bus on time brings more kids, and more kids on the bus keeps the road clear." },
+    loop: { type: "balancing", why: "Full buses push some kids to walk, so the buses empty out a little - the loop settles instead of growing forever." },
     fix: null
   },
   {
