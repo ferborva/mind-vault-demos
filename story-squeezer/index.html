@@ -6,64 +6,132 @@
 <title>Story Squeezer - practise spotting what matters</title>
 <style>
   :root{
-    --bg:#fdf6e3; --panel:#fffdf7; --ink:#2b2118; --muted:#6f6152;
-    --line:#e5dcc4; --accent:#b4532a; --accent-soft:#f4e6df;
-    --good:#2f6b4a; --good-soft:#e2f0e6; --gold:#8a6d1b;
-    --radius:14px;
+    --pink:#ff2e88; --yellow:#ffd400; --lime:#7dff2e; --purple:#7b2eff;
+    --cyan:#00d4ff; --orange:#ff6b00; --ink:#141414; --paper:#fffbe8;
+    --white:#ffffff; --muted:#4a4a4a;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);
-    font-family:Georgia,'Times New Roman',serif;font-size:18px;line-height:1.5}
-  #app{max-width:640px;margin:0 auto;padding:16px 16px 48px}
-  h1{font-size:34px;line-height:1.15;margin:8px 0 4px}
-  h2{font-size:24px;margin:6px 0 10px}
-  h3{font-size:19px;margin:18px 0 6px}
-  p{margin:8px 0}
-  .tag{display:inline-block;background:var(--accent-soft);color:var(--accent);
-    border:1px solid var(--accent);border-radius:999px;padding:4px 12px;
-    font-size:14px;font-family:system-ui,sans-serif}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    background-image:radial-gradient(#14141414 1.5px, transparent 1.5px);
+    background-size:22px 22px;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:18px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  body::before{content:"";display:block;height:12px;
+    background:repeating-linear-gradient(45deg,var(--pink) 0 16px,var(--yellow) 16px 32px,var(--lime) 32px 48px,var(--cyan) 48px 64px,var(--purple) 64px 80px)}
+  #app{max-width:640px;margin:0 auto;padding:20px 16px 64px;position:relative}
+  h1{font-family:"Arial Black",system-ui,sans-serif;display:inline-block;
+    font-size:44px;line-height:1.02;font-weight:900;text-transform:uppercase;
+    letter-spacing:-.01em;margin:6px 0 8px;background:var(--yellow);
+    padding:10px 16px;border:3px solid var(--ink);border-radius:14px;
+    box-shadow:6px 6px 0 var(--ink);transform:rotate(-1.5deg);
+    animation:popin .35s ease both}
+  h1::after{content:" \2702";font-size:36px;display:inline-block;
+    animation:floaty 2.4s ease-in-out infinite}
+  h2{font-family:"Arial Black",system-ui,sans-serif;font-size:26px;font-weight:900;
+    text-transform:uppercase;letter-spacing:.01em;margin:8px 0 10px}
+  h2::before{content:"";display:block;width:64px;height:8px;background:var(--pink);
+    border:2px solid var(--ink);border-radius:99px;margin-bottom:8px;transform:rotate(-1deg)}
+  h3{font-family:"Arial Black",system-ui,sans-serif;font-size:17px;font-weight:900;
+    text-transform:uppercase;letter-spacing:.06em;margin:20px 0 8px}
+  p{margin:10px 0}
+  .tag{display:inline-block;background:var(--pink);color:#fff;
+    border:3px solid var(--ink);border-radius:999px;padding:6px 14px;
+    font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;
+    font-family:system-ui,sans-serif;box-shadow:3px 3px 0 var(--ink);
+    transform:rotate(1.5deg)}
   .muted{color:var(--muted)}
   .small{font-size:15px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
-    padding:16px;margin:12px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-  .chunk{background:#f7efdc;border-left:4px solid var(--accent);border-radius:8px;
+  .card{background:var(--white);border:3px solid var(--ink);border-radius:16px;
+    padding:18px;margin:14px 0;box-shadow:6px 6px 0 var(--ink);
+    animation:slideup .3s ease both;position:relative}
+  .chunk{background:#fffbe8;border:3px solid var(--ink);border-left:8px solid var(--pink);
+    border-radius:12px;padding:12px 14px;margin:10px 0}
+  .storytext{background:#fffbe8;border:3px solid var(--ink);border-radius:12px;
     padding:12px 14px;margin:10px 0}
-  .storytext{background:#f7efdc;border-radius:8px;padding:12px 14px;margin:10px 0}
-  button{font-family:system-ui,sans-serif;font-size:17px;min-height:48px;
-    border-radius:12px;border:2px solid var(--accent);background:var(--panel);
+  button{font-family:system-ui,sans-serif;font-size:17px;font-weight:800;min-height:48px;
+    border-radius:12px;border:3px solid var(--ink);background:var(--white);
     color:var(--ink);padding:10px 16px;margin:6px 6px 6px 0;cursor:pointer;
-    text-align:left;line-height:1.35}
-  button:hover{background:var(--accent-soft)}
-  button.primary{background:var(--accent);color:#fff;font-weight:700;text-align:center}
-  button.primary:disabled{background:#cbb9a8;border-color:#cbb9a8;cursor:default}
+    text-align:left;line-height:1.35;box-shadow:4px 4px 0 var(--ink);
+    transition:transform .12s ease,box-shadow .12s ease,background .12s ease}
+  button:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+  button.primary{background:var(--pink);color:#fff;font-weight:900;text-align:center;
+    text-transform:uppercase;letter-spacing:.03em}
+  button.primary:disabled{background:#b9c9c4;border-color:var(--ink);cursor:default;
+    box-shadow:4px 4px 0 var(--ink);transform:none}
   button:disabled{opacity:.55;cursor:default}
-  button.picked{background:var(--accent-soft);border-color:var(--accent);
-    box-shadow:0 0 0 2px var(--accent) inset}
-  button.correct{background:var(--good-soft);border-color:var(--good)}
-  button.wrongpick{background:#f7e8e2;border-color:#a4553a}
+  button.picked{background:var(--yellow);border-color:var(--ink);
+    box-shadow:6px 6px 0 var(--ink);transform:translate(-2px,-2px) rotate(-1deg);
+    animation:pop .3s ease both}
+  button.correct{background:var(--lime);border-color:var(--ink)}
+  button.wrongpick{background:#ffe1c2;border-color:var(--ink)}
   .opt{display:block;width:100%}
-  .tray{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .tray{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
   .tile{min-height:48px;min-width:64px;padding:10px 14px;border-radius:999px;
-    border:2px solid var(--accent);background:var(--panel);font-size:17px;
-    font-family:system-ui,sans-serif;cursor:pointer}
-  .tile.picked{background:var(--accent);color:#fff;font-weight:700}
-  .tile.keep{background:var(--good-soft);border-color:var(--good);font-weight:700}
+    border:3px solid var(--ink);background:var(--white);font-size:17px;font-weight:800;
+    font-family:system-ui,sans-serif;cursor:pointer;text-align:center;
+    box-shadow:3px 3px 0 var(--ink);transition:transform .12s ease,box-shadow .12s ease}
+  .tile.picked{background:var(--pink);color:#fff;font-weight:900;
+    transform:translate(-2px,-2px) rotate(-1deg);animation:pop .3s ease both}
+  .tile.keep{background:var(--lime);border-color:var(--ink);font-weight:900}
   .tile.miss{opacity:.55}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .pill{display:inline-block;border:1px solid var(--line);border-radius:999px;
-    padding:4px 12px;font-size:14px;font-family:system-ui,sans-serif;background:var(--panel)}
-  .pill.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .pill{display:inline-block;border:3px solid var(--ink);border-radius:999px;
+    padding:4px 12px;font-size:13px;font-weight:900;text-transform:uppercase;
+    letter-spacing:.05em;font-family:system-ui,sans-serif;background:var(--white)}
+  .pill.on{background:var(--lime);color:var(--ink);border-color:var(--ink)}
   .pill.locked{opacity:.55}
-  .score{font-size:20px;font-weight:700}
-  .why{background:var(--good-soft);border-radius:8px;padding:10px 14px;margin:10px 0}
-  .gentle{background:#f7e8e2;border-radius:8px;padding:10px 14px;margin:10px 0}
-  .banner{background:var(--accent-soft);border:1px dashed var(--accent);
-    border-radius:var(--radius);padding:14px;margin:12px 0;text-align:center}
-  .progress{font-family:system-ui,sans-serif;font-size:14px;color:var(--muted)}
+  .score{display:inline-block;font-size:21px;font-weight:900;background:var(--yellow);
+    border:3px solid var(--ink);border-radius:12px;padding:8px 14px;
+    box-shadow:4px 4px 0 var(--ink);transform:rotate(-1deg)}
+  .why{background:var(--lime);border:3px solid var(--ink);border-radius:12px;
+    padding:12px 16px;margin:12px 0;box-shadow:4px 4px 0 var(--ink)}
+  .gentle{background:#ffe1c2;border:3px solid var(--ink);border-radius:12px;
+    padding:12px 16px;margin:12px 0;box-shadow:4px 4px 0 var(--ink)}
+  .banner{background:linear-gradient(120deg,var(--pink),var(--orange));
+    border:3px solid var(--ink);border-radius:16px;padding:18px;margin:14px 0;
+    text-align:center;box-shadow:6px 6px 0 var(--ink);transform:rotate(-1deg);
+    animation:slideup .3s ease both;color:#fff}
+  .banner h2{color:#fff}
+  .banner h2::before{background:var(--yellow);border-color:var(--ink)}
+  .banner p{color:#fff;font-weight:700}
+  .banner strong{color:#fff}
+  .progress{display:inline-block;font-family:system-ui,sans-serif;font-size:13px;
+    font-weight:900;text-transform:uppercase;letter-spacing:.06em;
+    background:var(--ink);color:#fff;border-radius:999px;padding:6px 12px}
+  .sticker{position:absolute;top:-14px;right:16px;font-weight:900;font-size:13px;
+    text-transform:uppercase;letter-spacing:.05em;padding:6px 12px;
+    border:3px solid var(--ink);border-radius:999px;box-shadow:3px 3px 0 var(--ink);
+    transform:rotate(2.5deg);background:var(--pink);color:#fff}
+  .sticker.s1{background:var(--lime);color:var(--ink)}
+  .sticker.s2{background:var(--yellow);color:var(--ink)}
+  .sticker.s3{background:var(--purple);color:#fff}
+  .burst-wrap{position:relative;z-index:0}
+  .burst{position:absolute;inset:-18px -18px 0 -18px;z-index:-1;border-radius:50%;
+    background:repeating-conic-gradient(var(--yellow) 0 12deg, transparent 12deg 24deg);
+    opacity:.55;animation:spin 14s linear infinite}
   details{margin:10px 0}
-  summary{cursor:pointer;font-family:system-ui,sans-serif;font-size:16px;
+  summary{cursor:pointer;font-family:system-ui,sans-serif;font-size:16px;font-weight:800;
     min-height:44px;line-height:44px}
   .hidden{display:none}
+  @media (hover:hover){
+    button:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink);
+      background:var(--yellow)}
+    button.primary:hover{background:var(--purple)}
+    .tile:hover{transform:translate(-1px,-1px) scale(1.06);box-shadow:4px 4px 0 var(--ink);
+      background:var(--yellow)}
+  }
+  button:focus-visible{outline:3px solid var(--purple);outline-offset:2px}
+  @keyframes popin{0%{transform:scale(.85) rotate(-2deg);opacity:0}
+    70%{transform:scale(1.04) rotate(.5deg);opacity:1}
+    100%{transform:scale(1) rotate(0deg);opacity:1}}
+  @keyframes pop{0%{transform:translate(0,0) scale(.8) rotate(-3deg)}
+    70%{transform:translate(-2px,-2px) scale(1.06) rotate(1deg)}
+    100%{transform:translate(-2px,-2px) scale(1) rotate(-1deg)}}
+  @keyframes slideup{from{transform:translateY(14px);opacity:0}
+    to{transform:translateY(0);opacity:1}}
+  @keyframes wiggle{0%{transform:rotate(-1.6deg)}50%{transform:rotate(1.6deg)}100%{transform:rotate(-1.6deg)}}
+  @keyframes floaty{0%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(3deg)}100%{transform:translateY(0) rotate(-3deg)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -1229,7 +1297,7 @@ function homeHtml(){
     const locked = !isUnlocked(l);
     const best = bestFor(l);
     const q = qualifyingGames(l);
-    levels += '<div class="card"><strong>' + LEVELS[l].name + '</strong> '
+    levels += '<div class="card"><span class="sticker s' + l + '">Level ' + l + '</span><strong>' + LEVELS[l].name + '</strong> '
       + (locked ? '<span class="pill locked">Locked</span>' : '<span class="pill on">Open</span>') + '<br>'
       + '<span class="muted small">' + LEVELS[l].blurb + '</span><br>'
       + (best ? '<span class="small">Best so far: ' + best.head + ' of 5 headlines, ' + best.keep + ' of 25 keeper words.</span><br>' : '')
@@ -1240,11 +1308,12 @@ function homeHtml(){
   return '<h1>Story Squeezer</h1>'
     + '<p><strong>Practise spotting what matters in a story.</strong></p>'
     + '<p class="muted">Read a short true story, then squeeze it: pick the headline that says what it is mostly about, and keep the five words that matter most. No timers, no streaks - just reading with a question in mind.</p>'
+    + '<p><strong>You are the editor. Every story arrives too long. Your job: squeeze it down to what it is really about.</strong></p>'
     + '<h3>How to play</h3>'
     + '<p class="small">1. <strong>Question first</strong> - guess what the story will mostly be about.<br>'
     + '2. <strong>Read in chunks</strong> - three short cards, in your own time. Re-read as much as you like.<br>'
-    + '3. <strong>The squeeze</strong> - pick 1 headline from 4, and keep 5 words from a tray of 10.<br>'
-    + '5 stories per game, about 10 minutes.</p>'
+    + '3. <strong>The squeeze</strong> - pick 1 headline from 4, and keep 5 words from a tray of 10.</p>'
+    + '<p class="small">5 stories per game, about 10 minutes.</p>'
     + '<h3>Play together</h3>'
     + '<p><button class="primary" onclick="pickMode(\'turns\')">Take Turns</button>'
     + '<button onclick="pickMode(\'both\')">Both Squeeze</button></p>'
@@ -1317,7 +1386,7 @@ function squeezeHtml(who){
   let h = '<p class="progress">' + roundTitle() + ' &middot; ' + esc(t.topic) + '</p>'
     + '<h2>' + esc(t.title) + '</h2>'
     + '<div class="banner"><strong>' + esc(label) + '</strong></div>'
-    + '<details><summary>Show the story again</summary><div class="storytext">' + t.chunks.map(esc).join("</div><div class=\"storytext\">") + '</div></details>'
+    + '<details open><summary>Hide the story</summary><div class="storytext">' + t.chunks.map(esc).join("</div><div class=\"storytext\">") + '</div></details>'
     + '<div class="card"><h3>Pick the headline</h3>'
     + '<p class="small muted">Which one says what the whole story is mostly about?</p>';
   heads.forEach(function(hd, i){
@@ -1344,17 +1413,17 @@ function feedbackHtml(){
   let h = '<p class="progress">' + roundTitle() + ' &middot; ' + esc(t.topic) + '</p>'
     + '<h2>' + esc(t.title) + '</h2>';
   if(S.mode === "both"){
-    h += '<div class="card"><h3>Side by side</h3>'
+    h += (log.headOk ? '<div class="burst-wrap"><div class="burst"></div>' : '') + '<div class="card"><h3>Side by side</h3>'
       + '<p>Player A picked: <strong>' + esc(S.headPick) + '</strong> ' + (S.headPick === correct.text ? '(that is the main idea)' : '') + '</p>'
       + '<p>Player B picked: <strong>' + esc(S.headPickB) + '</strong> ' + (S.headPickB === correct.text ? '(that is the main idea)' : '') + '</p>';
     if(S.headPick !== S.headPickB){
       h += '<p><strong>Talk it out - what did each of you notice?</strong></p>';
     }
-    h += '</div>';
+    h += '</div>' + (log.headOk ? '</div>' : '');
   } else {
     const picked = t.headlines.filter(function(x){ return x.text === S.headPick; })[0];
     if(log.headOk){
-      h += '<div class="why"><strong>That is the main idea.</strong> ' + esc(t.why) + '</div>';
+      h += '<div class="burst-wrap"><div class="burst"></div><div class="why"><strong>That is the main idea.</strong> ' + esc(t.why) + '</div></div>';
     } else {
       h += '<div class="gentle"><strong>Not quite - that one was ' + trapLabel(picked.kind) + ', not the main idea.</strong><br>' + esc(t.why) + '</div>';
     }
