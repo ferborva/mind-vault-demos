@@ -103,6 +103,55 @@
   .cellstatic .add{font-size:22px;margin-left:2px}
   .grid.small .cellstatic{min-height:52px;font-size:26px;border-radius:10px;box-shadow:3px 3px 0 var(--ink)}
   .grid.small .cellstatic .add{font-size:14px}
+  /* Themed boards: one distinct treatment per scene. The grid is where
+     the player looks for 80% of play time, so the theme lives on the
+     board itself, not just in the heading above it. */
+  .board{border:3px solid var(--ink);border-radius:18px;padding:12px 12px 8px;
+    margin:14px 0;box-shadow:6px 6px 0 var(--ink)}
+  .board .grid{margin:0;border:3px solid var(--ink);border-radius:14px;
+    padding:10px;background:rgba(255,255,255,.55)}
+  .board-label{display:inline-block;background:var(--white);color:var(--ink);
+    border:3px solid var(--ink);border-radius:999px;padding:4px 12px;
+    font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;
+    font-family:system-ui,sans-serif;box-shadow:3px 3px 0 var(--ink);
+    transform:rotate(-1.5deg);margin:0 0 8px 2px}
+  .board.theme-bedroom{background:#ffd6e8;border-color:#ff2e88}
+  .board.theme-bedroom .board-label{background:#ff2e88;color:#fff}
+  .board.theme-bedroom .grid{border-color:#ff2e88}
+  .board.theme-kitchen{background:#ffe3c2;border-color:#ff6b00}
+  .board.theme-kitchen .board-label{background:#ff6b00;color:#fff}
+  .board.theme-kitchen .grid{border-color:#ff6b00}
+  .board.theme-pirate{background:#cfe6ff;border-color:#0b3d91}
+  .board.theme-pirate .board-label{background:#0b3d91;color:#fff}
+  .board.theme-pirate .grid{border-color:#0b3d91}
+  .board.theme-space{background:#241a4d;border-color:#7b2eff;
+    background-image:radial-gradient(#ffffff 1.2px, transparent 1.6px),
+      radial-gradient(#ffd400 1.2px, transparent 1.6px);
+    background-size:28px 28px, 36px 36px;background-position:0 0, 12px 18px}
+  .board.theme-space .board-label{background:#ffd400;color:var(--ink)}
+  .board.theme-space .grid{border-color:#ffd400;background:rgba(255,255,255,.14)}
+  .board.theme-garden{background:#d9f7c4;border-color:#2e8b2e}
+  .board.theme-garden .board-label{background:#2e8b2e;color:#fff}
+  .board.theme-garden .grid{border-color:#2e8b2e}
+  .board.theme-classroom{background:#fff3a0;border-color:#e6a800}
+  .board.theme-classroom .board-label{background:#ffd400;color:var(--ink)}
+  .board.theme-classroom .grid{border-color:#e6a800}
+  /* Reveal celebration: a hit pops, a miss pulses so the eye lands on it. */
+  .gotcha-sticker{display:inline-block;background:var(--yellow);color:var(--ink);
+    border:3px solid var(--ink);border-radius:12px;padding:8px 16px;
+    font-family:"Arial Black",system-ui,sans-serif;font-size:22px;font-weight:900;
+    text-transform:uppercase;letter-spacing:.03em;box-shadow:5px 5px 0 var(--ink);
+    transform:rotate(-3deg);margin:6px 0 2px;animation:gotchapop .45s ease both}
+  .why.gotcha-box{border-width:4px;box-shadow:6px 6px 0 var(--ink)}
+  .why.gotcha-box::before{content:"\2B50 \2B50 \2B50";display:block;font-size:20px;
+    letter-spacing:6px;margin-bottom:4px}
+  .cellstatic{position:relative}
+  .cellstatic.gotcha-cell{background:var(--lime);box-shadow:6px 6px 0 var(--ink);
+    animation:cellpop .6s ease both}
+  .cellstatic.gotcha-cell::after{content:"\2B50";position:absolute;top:-10px;right:-6px;
+    font-size:22px;transform:rotate(12deg)}
+  .cellstatic.miss-spot{outline:4px solid var(--pink);outline-offset:2px;
+    background:#ffe1c2;animation:misspulse 1.2s ease-in-out infinite}
   .tile{min-height:48px;min-width:64px;padding:10px 14px;border-radius:999px;
     border:3px solid var(--ink);background:var(--white);font-size:24px;font-weight:800;
     font-family:system-ui,sans-serif;cursor:pointer;text-align:center;
@@ -130,6 +179,13 @@
     to{transform:translateY(0);opacity:1}}
   @keyframes wiggle{0%{transform:rotate(-1.6deg)}50%{transform:rotate(1.6deg)}100%{transform:rotate(-1.6deg)}}
   @keyframes floaty{0%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(3deg)}100%{transform:translateY(0) rotate(-3deg)}}
+  @keyframes gotchapop{0%{transform:scale(.6) rotate(-8deg);opacity:0}
+    70%{transform:scale(1.12) rotate(-2deg);opacity:1}
+    100%{transform:scale(1) rotate(-3deg);opacity:1}}
+  @keyframes cellpop{0%{transform:scale(1)}40%{transform:scale(1.18) rotate(-3deg)}
+    70%{transform:scale(.96) rotate(1deg)}100%{transform:scale(1.06)}}
+  @keyframes misspulse{0%,100%{outline-color:var(--pink);transform:scale(1)}
+    50%{outline-color:var(--orange);transform:scale(1.06)}}
 
 </style>
 </head>
@@ -624,21 +680,26 @@ function cellInner(slot){
   const shown = itemShown(slot);
   return esc(shown.e) + (slot.added ? '<span class="add">' + esc(slot.added.e) + "</span>" : "");
 }
-function gridStatic(slots, small){
-  let h = '<div class="grid' + (small ? " small" : "") + '">';
+function boardOpen(){
+  const t = theme();
+  return '<div class="board theme-' + t.id + '"><span class="board-label">' + esc(t.emoji) + " " + esc(t.name) + "</span>";
+}
+function gridStatic(slots, small, highlightCells, highlightClass){
+  let h = boardOpen() + '<div class="grid' + (small ? " small" : "") + '">';
   for(let i = 0; i < 12; i++){
     const s = slots[i];
-    h += '<div class="cellstatic' + (s ? "" : " emptycell") + '">' + cellInner(s) + "</div>";
+    const hl = (highlightCells && highlightCells.indexOf(i) >= 0) ? " " + highlightClass : "";
+    h += '<div class="cellstatic' + (s ? "" : " emptycell") + hl + '">' + cellInner(s) + "</div>";
   }
-  return h + "</div>";
+  return h + "</div></div>";
 }
 function gridTap(slots){
-  let h = '<div class="grid">';
+  let h = boardOpen() + '<div class="grid">';
   for(let i = 0; i < 12; i++){
     const s = slots[i];
     h += '<button class="cell' + (s ? "" : " emptycell") + '" onclick="tapCell(' + i + ')">' + cellInner(s) + "</button>";
   }
-  return h + "</div>";
+  return h + "</div></div>";
 }
 function modeLine(){
   if(S.mode === 1) return "<p>Player " + (S.spotter + 1) + " is spotting this round - Player " + (2 - S.spotter) + " is the Sneaky Switcher.</p>";
@@ -760,14 +821,14 @@ function renderReveal(){
          way Solo/Together do. Multi-switch rounds already list every
          switch under "Everything that changed" below. */
       const desc = esc(r.switches[0] ? r.switches[0].desc : "");
-      if(r.p1correct && r.p2correct) h += '<div class="why"><strong>Both of you spotted it!</strong> ' + desc + "</div>";
-      else if(r.p1correct) h += '<div class="why"><strong>Player 1 spotted it!</strong> ' + desc + "</div>";
-      else if(r.p2correct) h += '<div class="why"><strong>Player 2 spotted it!</strong> ' + desc + "</div>";
+      if(r.p1correct && r.p2correct) h += '<div class="gotcha-sticker">GOTCHA!</div><div class="why gotcha-box"><strong>Both of you spotted it!</strong> ' + desc + "</div>";
+      else if(r.p1correct) h += '<div class="gotcha-sticker">GOTCHA!</div><div class="why gotcha-box"><strong>Player 1 spotted it!</strong> ' + desc + "</div>";
+      else if(r.p2correct) h += '<div class="gotcha-sticker">GOTCHA!</div><div class="why gotcha-box"><strong>Player 2 spotted it!</strong> ' + desc + "</div>";
       else h += '<div class="gentle"><strong>So close</strong> - ' + desc + "</div>";
-    }
+    } else if(r.p1correct || r.p2correct) h += '<div class="gotcha-sticker">GOTCHA!</div>';
     h += '<p class="score">Player 1: ' + S.p1score + " - Player 2: " + S.p2score + "</p>";
   } else {
-    if(r.correct) h += '<div class="why"><strong>You got it!</strong> ' + esc(r.spotted ? r.spotted.desc : "") + "</div>";
+    if(r.correct) h += '<div class="gotcha-sticker">GOTCHA!</div><div class="why gotcha-box"><strong>You got it!</strong> ' + esc(r.spotted ? r.spotted.desc : "") + "</div>";
     else h += '<div class="gentle"><strong>So close</strong> - ' + esc(r.switches[0] ? r.switches[0].desc : "") + "</div>";
     h += '<p class="score">You have spotted ' + S.score + " of " + (S.round + 1) + " switches so far.</p>";
   }
@@ -777,8 +838,12 @@ function renderReveal(){
     h += "</ul>";
   }
   h += "<h3>Before and after</h3>";
+  /* The changed cell celebrates on a hit and pulses on a miss, so the eye
+     lands on it instantly instead of scanning two small grids. */
+  const revealHit = S.mode === 2 ? (r.p1correct || r.p2correct) : r.correct;
+  const revealHl = revealHit ? "gotcha-cell" : "miss-spot";
   h += '<div class="row"><div style="flex:1;min-width:200px"><p class="small muted">Before</p>' + gridStatic(r.slots, true) + "</div>";
-  h += '<div style="flex:1;min-width:200px"><p class="small muted">After</p>' + gridStatic(r.changed, true) + "</div></div>";
+  h += '<div style="flex:1;min-width:200px"><p class="small muted">After</p>' + gridStatic(r.changed, true, r.changedCells, revealHl) + "</div></div>";
   if(S.round + 1 < ROUNDS_PER_GAME) h += '<p><button class="primary" onclick="nextRound()">Next round</button></p>';
   else h += '<p><button class="primary" onclick="nextRound()">See results</button></p>';
   return h;
