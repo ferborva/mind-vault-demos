@@ -138,22 +138,90 @@
     *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
       transition-duration:.01ms!important}
   }
-  /* Number Lock */
-  .dots{display:flex;gap:7px;justify-content:center;margin:14px 0 4px}
-  .dot{width:12px;height:12px;border-radius:99px;background:var(--line)}
-  .dot.p{background:var(--good)} .dot.h{background:var(--hot)} .dot.m{background:var(--bad)}
+  /* Number Lock - punk pass, style only (Six Moves kit: pink #ff2e88, yellow
+     #ffd400, lime #7dff2e, purple #7b2eff, cyan #00d4ff, orange #ff6b00).
+     Scoped with :has() so the other three modes and the home shell are
+     untouched. .digits/.pad/.key/.entry/.dots/.dot/.shape occur only on
+     Number Lock screens; no logic, copy or timing changes anywhere. */
+  @keyframes nl-pop{0%{transform:scale(.82) rotate(-2deg)}60%{transform:scale(1.05) rotate(1deg)}100%{transform:scale(1) rotate(-1deg)}}
+  @keyframes nl-wiggle{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
+  .dots{display:flex;gap:9px;justify-content:center;margin:16px 0 6px}
+  .dot{width:17px;height:17px;border-radius:99px;background:var(--line);border:2px solid #111;box-shadow:2px 2px 0 #111}
+  .dot.p{background:#7dff2e} .dot.h{background:#ffd400} .dot.m{background:#ff2e88}
   .digits{font:800 46px/1.1 ui-rounded,system-ui,sans-serif;letter-spacing:.14em;
     display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:6px 0}
-  .digits .chunk{background:var(--panel2);border-radius:12px;padding:6px 12px}
+  .digits .chunk{background:#fff;color:#111;border:3px solid #111;border-radius:12px;padding:6px 12px;box-shadow:4px 4px 0 #111}
   .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:300px;margin:14px auto 0}
-  .key{font:800 26px/1 ui-rounded,system-ui,sans-serif;background:var(--panel2);
-    border:2px solid var(--line);border-radius:14px;padding:16px 0;cursor:pointer;color:inherit;box-shadow:none}
-  .key:active{transform:scale(.94);box-shadow:none}
+  .key{font:800 26px/1 ui-rounded,system-ui,sans-serif;background:#ffd400;
+    border:3px solid #111;border-radius:14px;padding:16px 0;cursor:pointer;color:#111;box-shadow:4px 4px 0 #111}
+  .key:nth-child(3n+2){background:#ff2e88;color:#fff}
+  .key:nth-child(3n){background:#7dff2e}
+  .key:nth-child(10){background:#fff}
+  .key:nth-child(11){background:#00d4ff}
+  .key:nth-child(12){background:#7b2eff;color:#fff}
+  .pad .key.calm{background:#fff;color:#111;box-shadow:4px 4px 0 #111}
+  .key:active{transform:translate(3px,3px) scale(.97);box-shadow:1px 1px 0 #111;background:#ff6b00;color:#fff}
   .entry{font:800 34px/1.2 ui-rounded,system-ui,sans-serif;letter-spacing:.12em;min-height:44px;
-    color:var(--hot);word-break:break-all}
-  .shape{display:flex;align-items:center;gap:10px;justify-content:center;font-size:17px;margin:4px 0}
+    color:#111;background:#fff;border:3px solid #111;border-radius:14px;box-shadow:5px 5px 0 #111;
+    word-break:break-all;padding:10px 12px}
+  .shape{display:flex;align-items:center;gap:10px;justify-content:flex-start;text-align:left;font-size:17px;
+    margin:8px 0;background:#ffd400;color:#111;border:3px solid #111;border-radius:12px;
+    box-shadow:4px 4px 0 #111;padding:8px 12px}
   .shape .ic{width:30px;height:30px}
   .hidden{display:none}
+  /* Exposure stage: the tensest moment gets the loudest panel. */
+  .stage:has(> .digits){background:#ffd400;background-image:radial-gradient(#111 1.4px,transparent 1.4px);
+    background-size:18px 18px;border:3px solid #111;box-shadow:6px 6px 0 #111;transform:rotate(-.5deg);color:#111}
+  .stage:has(> .digits) .digits{background:#111;color:#ffd400;border:3px solid #111;border-radius:16px;
+    box-shadow:6px 6px 0 #ff2e88;padding:14px 18px}
+  .stage:has(> .digits) .link{color:#111;background:#fff;border:2px solid #111;border-radius:999px;
+    box-shadow:3px 3px 0 #111;padding:6px 14px;font-weight:800}
+  /* Intro stage: sticker header over a dot-paper panel. */
+  #app:has(> .stage:has(.big use[href="#i1f512"])) > h1{display:inline-block;background:#ff2e88;color:#fff;
+    border:3px solid #111;border-radius:14px;box-shadow:5px 5px 0 #111;padding:8px 16px;
+    transform:rotate(-2deg);animation:nl-pop .4s cubic-bezier(.2,.8,.2,1) both}
+  .stage:has(.big use[href="#i1f512"]){background:#fffdf5;background-image:radial-gradient(#ffd400 2px,transparent 2px);
+    background-size:20px 20px;border:3px solid #111;box-shadow:6px 6px 0 #111;transform:rotate(-1deg);color:#111}
+  .stage:has(.big use[href="#i1f512"]) .word{color:#111}
+  .stage:has(.big use[href="#i1f512"]) .muted{color:#444}
+  /* Keypad screen: sticker label and header, colour-pop keys. */
+  #app:has(> .pad) > p.muted{display:inline-block;background:#7dff2e;color:#111;border:3px solid #111;
+    border-radius:999px;box-shadow:3px 3px 0 #111;padding:6px 14px;transform:rotate(-1deg)}
+  #app:has(> .pad) > h2{display:inline-block;background:#ff2e88;color:#fff;border:3px solid #111;
+    border-radius:14px;box-shadow:5px 5px 0 #111;padding:8px 16px;transform:rotate(1deg);margin:12px 0 4px}
+  /* Trick screen: punk card, hot shape chips, sticker header. */
+  .card:has(.shape){background:#fffdf5;color:#111;border:3px solid #111;box-shadow:6px 6px 0 #111}
+  .card:has(.shape) .muted{color:#444}
+  #app:has(.shape) > p.muted{display:inline-block;background:#7b2eff;color:#fff;border:3px solid #111;
+    border-radius:999px;box-shadow:3px 3px 0 #111;padding:6px 14px;transform:rotate(-2deg)}
+  /* Recall feedback card (after tapping tick): chunky card, dark text. */
+  .card:has(> .digits){background:#fffdf5;color:#111;border:3px solid #111;box-shadow:6px 6px 0 #111;
+    animation:nl-pop .35s cubic-bezier(.2,.8,.2,1) both}
+  .card:has(> .digits) .muted{color:#444}
+  .card:has(> .digits) .score{color:#111}
+  .card:has(> .digits) .score span{color:#666!important}
+  /* Summary screen: sticker headline, chunky cards, real celebration. */
+  #app:has(.dots) > h1{display:inline-block;background:#ff2e88;color:#fff;border:3px solid #111;
+    border-radius:14px;box-shadow:5px 5px 0 #111;padding:8px 16px;
+    transform:rotate(-2deg);animation:nl-pop .4s cubic-bezier(.2,.8,.2,1) both}
+  #app:has(.dots) > .card{background:#fffdf5;color:#111;border:3px solid #111;box-shadow:6px 6px 0 #111}
+  #app:has(.dots) > .card .muted{color:#444}
+  #app:has(.dots) > .card .score{color:#111}
+  #app:has(.dots) > .card .score span{color:#666!important}
+  #app:has(.dots) > .card[style*="var(--good)"]{background:#7dff2e!important;border:3px solid #111!important;
+    box-shadow:6px 6px 0 #ff2e88!important;transform:rotate(-1deg);
+    animation:nl-wiggle .5s ease-in-out .3s 2 both}
+  #app:has(.dots) b[style*="var(--good)"]{color:#111!important;background:#ffd400;border:2px solid #111;
+    border-radius:8px;box-shadow:3px 3px 0 #111;padding:2px 8px;display:inline-block;transform:rotate(-1deg)}
+  /* Number Lock buttons only: chunky punk buttons, same press as the keys. */
+  #app:has(.dots) > button,#app:has(.shape) > button,#app:has(.card .digits) > button,
+  #app:has(> .stage:has(.big use[href="#i1f512"])) > button{background:#ffd400;color:#111;
+    border:3px solid #111;box-shadow:5px 5px 0 #111}
+  #app:has(.dots) > button.calm,#app:has(.shape) > button.calm,#app:has(.card .digits) > button.calm,
+  #app:has(> .stage:has(.big use[href="#i1f512"])) > button.calm{background:#fff;color:#111;
+    border:3px solid #111;box-shadow:4px 4px 0 #111}
+  #app:has(.dots) > button:active,#app:has(.shape) > button:active,#app:has(.card .digits) > button:active,
+  #app:has(> .stage:has(.big use[href="#i1f512"])) > button:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #111}
 </style>
 </head>
 <body>
