@@ -697,6 +697,16 @@ function renderReveal(){
   let h = "<h2>What changed</h2>";
   if(S.mode === 2){
     h += "<p>Player 1 " + (r.p1correct ? "spotted it!" : "missed this one.") + " Player 2 " + (r.p2correct ? "spotted it!" : "missed this one.") + "</p>";
+    if(r.switches.length === 1){
+      /* Single-switch rounds (Levels 1-2): name the change in words, the
+         way Solo/Together do. Multi-switch rounds already list every
+         switch under "Everything that changed" below. */
+      const desc = esc(r.switches[0] ? r.switches[0].desc : "");
+      if(r.p1correct && r.p2correct) h += '<div class="why"><strong>Both of you spotted it!</strong> ' + desc + "</div>";
+      else if(r.p1correct) h += '<div class="why"><strong>Player 1 spotted it!</strong> ' + desc + "</div>";
+      else if(r.p2correct) h += '<div class="why"><strong>Player 2 spotted it!</strong> ' + desc + "</div>";
+      else h += '<div class="gentle"><strong>So close</strong> - ' + desc + "</div>";
+    }
     h += '<p class="score">Player 1: ' + S.p1score + " - Player 2: " + S.p2score + "</p>";
   } else {
     if(r.correct) h += '<div class="why"><strong>You got it!</strong> ' + esc(r.spotted ? r.spotted.desc : "") + "</div>";
