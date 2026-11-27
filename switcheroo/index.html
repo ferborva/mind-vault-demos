@@ -159,6 +159,17 @@
   .tile.picked{background:var(--pink);color:#fff;font-weight:900;transform:rotate(-2deg)}
   .tray{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
   .hidden{display:none}
+  /* Caught Switches gallery: a record of what you have spotted, not a
+     currency. Static cards only - no hover, so nothing can stick on
+     touch (#51). */
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:10px;margin:12px 0}
+  .g-item{background:var(--white);border:3px solid var(--ink);border-radius:14px;
+    padding:12px;box-shadow:4px 4px 0 var(--ink);text-align:center}
+  .g-item .g-emoji{font-size:32px;display:block;line-height:1.1}
+  .g-item .g-label{display:block;font-weight:800;font-size:16px;margin:6px 0}
+  .g-item.missing{opacity:.6;background:var(--paper);box-shadow:3px 3px 0 var(--ink)}
+  .g-item.missing .g-emoji{filter:grayscale(1)}
   /* Hover feedback only where a real hover exists. On touch devices a tap
      leaves a stuck :hover behind, which painted the top-left grid cell
      cyan on the spot screen before any tap (#51). */
@@ -315,6 +326,16 @@ const UNLOCK_SCORE = 4;
 const MODES = ["Solo","Together","Versus"];
 const STORE_KEY = "switcheroo-progress-v1";
 
+/* The Caught Switches gallery: one entry per switch type. `add` is the
+   sneak-in type - a small thing sneaks into a crowded spot at Level 5. */
+const SWITCH_TYPES = [
+  {type:"remove", emoji:"👻", label:"Taken away"},
+  {type:"move", emoji:"🚶", label:"Moved"},
+  {type:"swap", emoji:"🔀", label:"Swapped places"},
+  {type:"colour", emoji:"🎨", label:"Changed colour"},
+  {type:"add", emoji:"🐭", label:"Sneaked in"}
+];
+
 /* ---- helpers ---- */
 function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function shuffle(a){
@@ -338,16 +359,36 @@ function slotKey(slot){
 }
 /* A slot is {cell, item, variant, added}. `slots` is always 12 long. */
 
-/* ---- progress (local storage only) ---- */
+/* ---- progress (local storage only) ----
+   One key holds it all: unlocked levels, caught switch types and
+   cleared themes. Old saves only have `unlocked`, so the gallery
+   fields are filled in when missing. */
 function loadProgress(){
   try{
     const raw = localStorage.getItem(STORE_KEY);
-    if(raw){ const p = JSON.parse(raw); if(p && typeof p.unlocked === "number") return p; }
+    if(raw){
+      const p = JSON.parse(raw);
+      if(p && typeof p.unlocked === "number"){
+        if(!p.caught || typeof p.caught !== "object") p.caught = {};
+        if(!p.cleared || typeof p.cleared !== "object") p.cleared = {};
+        return p;
+      }
+    }
   }catch(e){}
-  return {unlocked:1};
+  return {unlocked:1, caught:{}, cleared:{}};
 }
 function saveProgress(){
   try{ localStorage.setItem(STORE_KEY, JSON.stringify(S.progress)); }catch(e){}
+}
+/* A spotted switch joins the gallery straight away, so it survives a
+   reload even mid-game. */
+function recordCaught(sw){
+  if(!sw || !sw.type) return;
+  if(!S.progress.caught || typeof S.progress.caught !== "object") S.progress.caught = {};
+  if(!S.progress.caught[sw.type]){
+    S.progress.caught[sw.type] = true;
+    saveProgress();
+  }
 }
 function isUnlocked(l){ return l <= S.progress.unlocked; }
 
@@ -563,7 +604,9 @@ function pickTheme(i){ S.themePick = i; render(); }
 function goHowto(){ S.screen = "howto"; render(); }
 function goHome(){ S.screen = "home"; render(); }
 function startOver(){
-  S.progress = {unlocked:1};
+  /* Levels reset; the gallery is a record of what you have done, so it
+     stays put. */
+  S.progress = {unlocked:1, caught:(S.progress.caught || {}), cleared:(S.progress.cleared || {})};
   saveProgress();
   S.level = 1;
   render();
@@ -626,7 +669,7 @@ function confirmSpot(){
     /* Versus: Player 1 guesses first, then Player 2 on a fresh screen. */
     if(S.spotter === 0){
       r.p1pick = cell; r.p1correct = ok; r.spotted = sw;
-      if(ok) S.p1score++;
+      if(ok){ S.p1score++; recordCaught(sw); }
       S.spotter = 1;
       S.tapped = null;
       S.screen = "versus-pass";
@@ -634,14 +677,14 @@ function confirmSpot(){
       return;
     }
     r.p2pick = cell; r.p2correct = ok;
-    if(ok) S.p2score++;
+    if(ok){ S.p2score++; recordCaught(sw); }
     S.tapped = null;
     S.screen = "reveal";
     render();
     return;
   }
   r.picked = cell; r.correct = ok; r.spotted = sw;
-  if(ok) S.score++;
+  if(ok){ S.score++; recordCaught(sw); }
   S.tapped = null;
   S.screen = "reveal";
   render();
@@ -667,6 +710,13 @@ function finishGame(){
     S.progress.unlocked = S.level + 1;
     saveProgress();
     S.unlocked = S.level + 1;
+  }
+  /* A theme counts as cleared when every switch in one game there was
+     spotted - 6 of 6. In Versus, either player clearing it counts. */
+  if(best === ROUNDS_PER_GAME){
+    if(!S.progress.cleared || typeof S.progress.cleared !== "object") S.progress.cleared = {};
+    S.progress.cleared[THEMES[S.themeIdx].id] = true;
+    saveProgress();
   }
 }
 function playAgain(){
@@ -706,6 +756,39 @@ function modeLine(){
   if(S.mode === 2) return "<p>Study together - then guess one at a time.</p>";
   return "";
 }
+/* The Caught Switches gallery: which switch types you have spotted and
+   which themes you have cleared 6 of 6 at. A record of what you have
+   done, not a currency - nothing to spend, nothing to buy, nothing
+   that runs out. Unspotted and uncleared entries show as unfilled. */
+function renderGallery(){
+  const caught = (S.progress.caught && typeof S.progress.caught === "object") ? S.progress.caught : {};
+  const cleared = (S.progress.cleared && typeof S.progress.cleared === "object") ? S.progress.cleared : {};
+  let h = "<h3>Caught Switches</h3>";
+  h += '<p class="small muted">A record of what you have spotted - nothing to spend, nothing to buy, nothing that runs out. It only grows as you play.</p>';
+  h += '<div class="gallery">';
+  let nCaught = 0;
+  SWITCH_TYPES.forEach(function(st){
+    const got = !!caught[st.type];
+    if(got) nCaught++;
+    h += '<div class="g-item' + (got ? "" : " missing") + '"><span class="g-emoji">' + st.emoji + '</span><span class="g-label">' + st.label + "</span>"
+      + (got ? '<span class="pill on">Caught!</span>' : '<span class="pill locked">Not caught yet</span>') + "</div>";
+  });
+  h += "</div>";
+  h += '<p class="small">Switch types caught: ' + nCaught + " of " + SWITCH_TYPES.length + ".</p>";
+  h += "<h3>Themes cleared 6 of 6</h3>";
+  h += '<p class="small muted">A theme counts as cleared when you spot all 6 switches in one game there.</p>';
+  h += '<div class="gallery">';
+  let nCleared = 0;
+  THEMES.forEach(function(t){
+    const got = !!cleared[t.id];
+    if(got) nCleared++;
+    h += '<div class="g-item' + (got ? "" : " missing") + '"><span class="g-emoji">' + esc(t.emoji) + '</span><span class="g-label">' + esc(t.name) + "</span>"
+      + (got ? '<span class="pill on">Cleared!</span>' : '<span class="pill locked">Not cleared yet</span>') + "</div>";
+  });
+  h += "</div>";
+  h += '<p class="small">Themes cleared: ' + nCleared + " of " + THEMES.length + ".</p>";
+  return h;
+}
 function renderHome(){
   let h = "<h1>Switcheroo!</h1>";
   h += '<p><span class="tag">Memory and Retention</span></p>';
@@ -735,8 +818,9 @@ function renderHome(){
   });
   h += '<button class="' + (S.themePick === 6 ? "picked" : "") + '" onclick="pickTheme(6)">🎲 Surprise me</button></p>';
   h += '<p><button class="primary" onclick="newGame()">Start game</button></p>';
+  h += renderGallery();
   h += '<p class="small muted">Levels unlocked: ' + S.progress.unlocked + ' of 5. Your progress lives only in this browser.</p>';
-  h += '<p><button onclick="startOver()">Start over</button> <span class="small muted">Clears your unlocked levels.</span></p>';
+  h += '<p><button onclick="startOver()">Start over</button> <span class="small muted">Clears your unlocked levels - your Caught Switches gallery stays put.</span></p>';
   return h;
 }
 function renderHowto(){
@@ -898,6 +982,7 @@ render();
 /* ---- node harness hook ---- */
 if(typeof module !== "undefined" && module.exports){
   module.exports = {THEMES: THEMES, SMALLS: SMALLS, LEVELS: LEVELS, MODES: MODES,
+    SWITCH_TYPES: SWITCH_TYPES,
     DISTRACTOR_TILES: DISTRACTOR_TILES, ROUNDS_PER_GAME: ROUNDS_PER_GAME,
     shuffle: shuffle, slotKey: slotKey, itemShown: itemShown,
     dealRound: dealRound, generateSwitches: generateSwitches,
