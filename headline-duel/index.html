@@ -47,7 +47,8 @@
   button{font-family:system-ui,sans-serif;font-size:17px;font-weight:800;min-height:48px;
     border-radius:12px;border:3px solid var(--ink);background:var(--white);
     color:var(--ink);padding:10px 16px;margin:6px 6px 6px 0;cursor:pointer;
-    text-align:left;line-height:1.35;box-shadow:4px 4px 0 var(--ink)}
+    text-align:left;line-height:1.35;box-shadow:4px 4px 0 var(--ink);
+    transition:transform .12s ease,box-shadow .12s ease}
   button:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
   button.primary{background:var(--blue);color:#fff;font-weight:900;text-align:center;
     text-transform:uppercase;letter-spacing:.03em}
@@ -55,7 +56,8 @@
     box-shadow:4px 4px 0 var(--ink);transform:none}
   button:disabled{opacity:.55;cursor:default}
   button.picked{background:var(--yellow);border-color:var(--ink);
-    box-shadow:6px 6px 0 var(--ink);transform:translate(-2px,-2px) rotate(-1deg)}
+    box-shadow:6px 6px 0 var(--ink);transform:translate(-2px,-2px) rotate(-1deg);
+    animation:wiggle .45s ease both}
   button.correct{background:var(--lime);border-color:var(--ink)}
   button.dim{opacity:.75}
   .opt{display:block;width:100%}
@@ -83,6 +85,41 @@
   .banner{background:var(--pink);color:#fff;border:3px solid var(--ink);
     border-radius:12px;padding:12px 16px;margin:12px 0;box-shadow:4px 4px 0 var(--ink);
     font-weight:800}
+  /* ---- motion: CSS only, no logic change (wow fix, Nov 2026) ---- */
+  @keyframes pop-in{from{transform:scale(.6) rotate(-4deg);opacity:0}
+    to{transform:scale(1) rotate(-1.5deg);opacity:1}}
+  @keyframes slide-up{from{transform:translateY(14px);opacity:0}
+    to{transform:translateY(0);opacity:1}}
+  @keyframes slide-in-left{from{transform:translateX(-24px);opacity:0}
+    to{transform:translateX(0);opacity:1}}
+  @keyframes slide-in-right{from{transform:translateX(24px);opacity:0}
+    to{transform:translateX(0);opacity:1}}
+  @keyframes wiggle{0%,100%{transform:translate(-2px,-2px) rotate(-1deg)}
+    25%{transform:translate(-2px,-2px) rotate(-3.5deg)}
+    75%{transform:translate(-2px,-2px) rotate(1.5deg)}}
+  @keyframes wobble{0%,100%{transform:rotate(0deg)}
+    25%{transform:rotate(-1.5deg)}75%{transform:rotate(1.5deg)}}
+  @keyframes bounce-in{0%{transform:scale(.5);opacity:0}
+    60%{transform:scale(1.12);opacity:1}100%{transform:scale(1);opacity:1}}
+  h1{animation:pop-in .45s ease both}
+  #app > h2,#app > p,#app > .passage,#app > .lookaway,#app > .why,
+  #app > .versus{animation:slide-up .35s ease both}
+  #app > .card{animation:slide-up .35s ease both}
+  /* end screen: the winner card bounces in instead of sliding */
+  #app > p:has(> .score) + .card{animation:bounce-in .5s cubic-bezier(.2,1.4,.4,1) both}
+  #app > p:has(> .score) + .card strong{display:inline-block;animation:bounce-in .55s ease .05s both}
+  .banner{animation:pop-in .45s ease both}
+  .versus .side:first-child{animation:slide-in-left .4s ease both}
+  .versus .side:last-child{animation:slide-in-right .4s ease both}
+  .versus .side.wrong-side:first-child{animation:slide-in-left .4s ease both,wobble .9s ease-in-out .45s 3}
+  .versus .side.wrong-side:last-child{animation:slide-in-right .4s ease both,wobble .9s ease-in-out .45s 3}
+  .versus .side.correct-side{background:var(--lime)}
+  .trap{display:inline-block;background:var(--yellow);border:2px solid var(--ink);
+    border-radius:999px;padding:4px 10px;margin:6px 0 0;font-size:15px;font-weight:800;
+    box-shadow:2px 2px 0 var(--ink);transform:rotate(-1deg)}
+  @media (hover:hover){
+    button:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
+  }
 </style>
 </head>
 <body>
@@ -465,15 +502,41 @@ function renderPass(sudden){
   }
   app().innerHTML = h;
 }
+function trapLine(player, sudden){
+  /* Main Idea rounds only: name the trap under each pick. A wrong pick is
+     caught by the trap kind it chose; a correct pick dodged the traps (and
+     the one the other player fell for, if any). Intruder rounds have no
+     trap kinds, so they keep their existing "why" only. */
+  var p = sudden ? D.sd : currentPassage();
+  if(p.type !== "main"){ return ""; }
+  var pick = player === 1 ? D.p1pick : D.p2pick;
+  if(pick === null || pick === undefined){ return ""; }
+  var kind = D.opts[player][pick].kind;
+  if(kind === "correct"){
+    var other = player === 1 ? 2 : 1;
+    var opick = player === 1 ? D.p2pick : D.p1pick;
+    var okind = (opick !== null && opick !== undefined) ? D.opts[other][opick].kind : null;
+    if(okind && okind !== "correct"){
+      return '<p class="trap">You dodged the ' + okind + ' trap!</p>';
+    }
+    return '<p class="trap">You dodged the traps - that is the main idea.</p>';
+  }
+  var why = kind === "detail" ? "it is true, but only a small part of the passage."
+    : kind === "broad" ? "it is true of the topic, but not of this passage."
+    : "it used the passage's own words, but turned them around.";
+  return '<p class="trap">Caught by the ' + kind + ' trap - ' + why + '</p>';
+}
 function revealSides(sudden){
   var p = sudden ? D.sd : currentPassage();
   var c1 = isCorrect(1, sudden), c2 = isCorrect(2, sudden);
   var h = '<div class="versus">';
-  h += '<div class="side"><h3>Player 1</h3><p>' + esc(pickedText(1, sudden)) + '</p>';
+  h += '<div class="side' + (c1 ? ' correct-side' : ' wrong-side') + '"><h3>Player 1</h3><p>' + esc(pickedText(1, sudden)) + '</p>';
   h += c1 ? '<p class="tick">Spot on.</p>' : '<p class="muted">Not this one.</p>';
+  h += trapLine(1, sudden);
   h += '</div>';
-  h += '<div class="side"><h3>Player 2</h3><p>' + esc(pickedText(2, sudden)) + '</p>';
+  h += '<div class="side' + (c2 ? ' correct-side' : ' wrong-side') + '"><h3>Player 2</h3><p>' + esc(pickedText(2, sudden)) + '</p>';
   h += c2 ? '<p class="tick">Spot on.</p>' : '<p class="muted">Not this one.</p>';
+  h += trapLine(2, sudden);
   h += '</div></div>';
   if(p.type === "main"){
     var correct = null;
