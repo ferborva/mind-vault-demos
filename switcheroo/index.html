@@ -779,13 +779,13 @@ function renderGallery(){
   });
   h += "</div>";
   h += '<p class="small">Switch types caught: ' + nCaught + " of " + SWITCH_TYPES.length + ".</p>";
-  h += "<h3>Themes cleared 6 of 6</h3>";
+  let nCleared = 0;
+  THEMES.forEach(function(t){ if(cleared[t.id]) nCleared++; });
+  h += '<h3>Themes cleared: ' + nCleared + ' of ' + THEMES.length + '</h3>';
   h += '<p class="small muted">A theme counts as cleared when you spot all 6 switches in one game there.</p>';
   h += '<div class="gallery">';
-  let nCleared = 0;
   THEMES.forEach(function(t){
     const got = !!cleared[t.id];
-    if(got) nCleared++;
     h += '<div class="g-item' + (got ? "" : " missing") + '"><span class="g-emoji">' + esc(t.emoji) + '</span><span class="g-label">' + esc(t.name) + "</span>"
       + (got ? '<span class="pill on">Cleared!</span>' : '<span class="pill locked">Not cleared yet</span>') + "</div>";
   });
