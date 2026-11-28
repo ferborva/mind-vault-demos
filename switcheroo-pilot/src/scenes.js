@@ -495,7 +495,9 @@ class HowToScene extends Phaser.Scene {
     });
     bodyText(this, "Together mode: the non-spotter is the Sneaky Switcher and picks the change. " +
       "Versus mode: both study, then guess one at a time - the second player cannot copy the first.", y + 10, 24);
-    punkButton(self, 360, y + 130, 560, "BACK", function () { self.scene.start("Home"); },
+    /* Paragraph wraps to three lines (ends ~871): BACK at y+190 puts its
+       top edge at 916, clear of the third line (#55). */
+    punkButton(self, 360, y + 190, 560, "BACK", function () { self.scene.start("Home"); },
       { fill: PINK, textColor: "#ffffff" });
   }
 }
@@ -557,10 +559,12 @@ class GalleryScene extends Phaser.Scene {
     /* The header count is the real count, computed above - this line
        once hardcoded "Themes cleared 6 of 6" on a fresh save. */
     bodyText(this, "Themes cleared " + nCleared + " of " + THEMES.length + ".", 780, 26);
+    /* Footer wraps to two lines at width 648 (ends ~1120): BACK sits at
+       1200 so its top edge (1152) clears the second line (#55). */
     smallText(this, "Themes cleared: " + nCleared + " of " + THEMES.length +
       ". A theme counts as cleared when you spot all 6 switches in one game there.", 1065);
     var self2 = this;
-    punkButton(this, 360, 1160, 560, "BACK", function () { self2.scene.start("Home"); },
+    punkButton(this, 360, 1200, 560, "BACK", function () { self2.scene.start("Home"); },
       { fill: PINK, textColor: "#ffffff" });
   }
 }
@@ -681,8 +685,11 @@ class DistractorScene extends Phaser.Scene {
     S.distractorTiles.forEach(function (tile, i) {
       var col = i % 3, row = Math.floor(i / 3);
       var cx = 180 + col * 180, cy = 300 + row * 130;
-      var bg = self.add.rectangle(cx, cy, 150, 100, WHITE).setOrigin(0.5).setStrokeStyle(4, INK);
-      var label = self.add.text(cx, cy, tile, { fontSize: "56px" }).setOrigin(0.5);
+      /* Children sit at local (0,0) inside the container: Phaser adds a
+         child's x/y to its container's, so absolute coords here used to
+         render every tile at double its coded position (#55). */
+      var bg = self.add.rectangle(0, 0, 150, 100, WHITE).setOrigin(0.5).setStrokeStyle(4, INK);
+      var label = self.add.text(0, 0, tile, { fontSize: "56px" }).setOrigin(0.5);
       var tileObj = self.add.container(cx, cy, [bg, label]);
       jPopIn(self, tileObj, { from: 0.6, duration: 220, delay: i * 30 });
       bg.setInteractive({ useHandCursor: true });
